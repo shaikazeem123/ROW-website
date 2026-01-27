@@ -1,0 +1,97 @@
+import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { AppLayout } from '../components/layout/AppLayout';
+import { LoginPage } from '../pages/auth/Login';
+import { DashboardPage } from '../pages/dashboard/Dashboard';
+import { CalendarPage } from '../pages/calendar/Calendar';
+import { LiveBusTrackingPage } from '../pages/tracking/LiveBusTracking';
+import { TripEntryPage } from '../pages/tracking/TripEntry';
+import { TripHistoryPage } from '../pages/tracking/TripHistory';
+import { AddBeneficiaryPage } from '../pages/beneficiary/AddBeneficiary';
+import { EditBeneficiaryPage } from '../pages/beneficiary/EditBeneficiary';
+import { BeneficiaryListPage } from '../pages/beneficiary/BeneficiaryList';
+import { BeneficiaryProfilePage } from '../pages/beneficiary/BeneficiaryProfile';
+import { ServiceEntryPage } from '../pages/services/ServiceEntry';
+import { ServiceHistoryPage } from '../pages/services/ServiceHistory';
+import { ReportsPage } from '../pages/reports/Reports';
+import { SettingsPage } from '../pages/settings/Settings';
+import { NotFoundPage } from '../pages/NotFound';
+import { ProtectedRoute } from './ProtectedRoute';
+
+export const router = createBrowserRouter([
+    {
+        path: '/login',
+        element: <LoginPage />,
+    },
+    {
+        path: '/',
+        element: <ProtectedRoute />,
+        errorElement: <NotFoundPage />,
+        children: [
+            {
+                element: <AppLayout />,
+                children: [
+                    {
+                        index: true,
+                        element: <Navigate to="/dashboard" replace />,
+                    },
+                    {
+                        path: 'dashboard',
+                        element: <DashboardPage />,
+                    },
+                    {
+                        path: 'calendar',
+                        element: <CalendarPage />,
+                    },
+                    {
+                        path: 'tracking',
+                        element: <LiveBusTrackingPage />,
+                    },
+                    {
+                        path: 'tracking/add-trip',
+                        element: <TripEntryPage />,
+                    },
+                    {
+                        path: 'tracking/history',
+                        element: <TripHistoryPage />,
+                    },
+                    {
+                        path: 'tracking/edit-trip/:id',
+                        element: <TripEntryPage />,
+                    },
+                    {
+                        path: 'beneficiary/add',
+                        element: <AddBeneficiaryPage />,
+                    },
+                    {
+                        path: 'beneficiary/list',
+                        element: <BeneficiaryListPage />,
+                    },
+                    {
+                        path: 'beneficiary/:id',
+                        element: <BeneficiaryProfilePage />,
+                    },
+                    {
+                        path: 'beneficiary/edit/:id',
+                        element: <EditBeneficiaryPage />,
+                    },
+                    {
+                        path: 'services/new',
+                        element: <ServiceEntryPage />,
+                    },
+                    {
+                        path: 'services/history',
+                        element: <ServiceHistoryPage />,
+                    },
+                    {
+                        path: 'reports',
+                        element: <ReportsPage />,
+                    },
+                    {
+                        path: 'settings',
+                        element: <SettingsPage />,
+                    },
+                ]
+            }
+        ],
+    },
+]);
