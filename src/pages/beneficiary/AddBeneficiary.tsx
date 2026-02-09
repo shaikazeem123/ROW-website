@@ -5,14 +5,38 @@ import { Select } from '@/components/common/Select';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
-import { Save } from 'lucide-react';
+import { Save, Wifi, WifiOff, Printer, Download } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { db } from '@/lib/db';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { OfflineStorage } from '@/utils/offlineUtils';
+
+const printStyles = `
+  @media print {
+    body * { visibility: hidden; }
+    #printable-token, #printable-token * { visibility: visible; }
+    #printable-token {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      text-align: center;
+      padding: 40px;
+      border: 2px dashed #000;
+    }
+  }
+`;
+import { TokenService } from '@/services/tokenService';
 
 export function AddBeneficiaryPage() {
     const navigate = useNavigate();
     const { user } = useAuth();
+    const isOnline = useOnlineStatus();
     const [isLoading, setIsLoading] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [assignedToken, setAssignedToken] = useState<string | number | null>(null);
+    const [isOfflineRecord, setIsOfflineRecord] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         age: '',
@@ -41,42 +65,103 @@ export function AddBeneficiaryPage() {
         e.preventDefault();
         setIsLoading(true);
 
-        try {
-            const { error } = await supabase
-                .from('beneficiaries')
-                .insert([{
-                    name: formData.name,
-                    age: parseInt(formData.age),
-                    gender: formData.gender,
-                    date_of_registration: formData.dateOfRegistration,
-                    parent_guardian: formData.parentGuardian,
-                    relationship: formData.relationship,
-                    beneficiary_type: formData.beneficiaryType,
-                    status: formData.status,
-                    address: formData.address,
-                    address_type: formData.addressType,
-                    country: formData.country,
-                    state: formData.state,
-                    district: formData.district,
-                    city: formData.city,
-                    pincode: formData.pincode,
-                    mobile_no: formData.mobileNo,
-                    purpose_of_visit: formData.purposeOfVisit,
-                    disability_type: formData.disabilityType,
-                    program: formData.program,
-                    donor: formData.donor,
-                    economic_status: formData.economicStatus,
-                    created_by: user?.id
-                }]);
+        const nextSequence = await TokenService.getNextToken();
+        const tempToken = OfflineStorage.generateOfflineToken('FIELD', nextSequence);
 
-            if (error) throw error;
-            navigate('/beneficiary/list');
+        const beneficiaryData = {
+            name: formData.name,
+            age: parseInt(formData.age),
+            gender: formData.gender,
+            date_of_registration: formData.dateOfRegistration,
+            parent_guardian: formData.parentGuardian,
+            relationship: formData.relationship,
+            beneficiary_type: formData.beneficiaryType,
+            status: formData.status,
+            address: formData.address,
+            address_type: formData.addressType,
+            country: formData.country,
+            state: formData.state,
+            district: formData.district,
+            city: formData.city,
+            pincode: formData.pincode,
+            mobile_no: formData.mobileNo,
+            purpose_of_visit: formData.purposeOfVisit,
+            disability_type: formData.disabilityType,
+            program: formData.program,
+            donor: formData.donor,
+            economic_status: formData.economicStatus,
+            created_by: user?.id,
+            offline_token: tempToken,
+            created_at: new Date().toISOString(),
+        };
+
+        try {
+            await db.beneficiaries.add({
+                ...beneficiaryData,
+                sync_status: 'pending'
+            });
+
+            // Update local token tracking
+            await TokenService.updateLastToken(nextSequence);
+
+            if (isOnline) {
+                // Try to sync with Supabase immediately if online
+                const { data, error } = await supabase
+                    .from('beneficiaries')
+                    .insert([beneficiaryData])
+                    .select('*')
+                    .single();
+
+                if (!error) {
+                    // Update local record if sync was successful
+                    await db.beneficiaries.where('offline_token').equals(tempToken).modify({
+                        sync_status: 'synced'
+                    });
+                    setAssignedToken(data.token_no);
+                    setIsOfflineRecord(false);
+                } else {
+                    console.error('Immediate sync failed, record remains pending:', error);
+                    setAssignedToken(tempToken);
+                    setIsOfflineRecord(true);
+                }
+            } else {
+                setAssignedToken(tempToken);
+                setIsOfflineRecord(true);
+            }
+
+            setShowSuccessModal(true);
+
+            // Note: We don't navigate immediately anymore so the user can see the token popup
         } catch (error: any) {
             console.error('Error saving beneficiary:', error);
             alert(error.message || 'Failed to save beneficiary');
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handlePrintToken = () => {
+        window.print();
+    };
+
+    const handleDownloadToken = () => {
+        const text = `
+----------------------------
+  REHAB ON WHEELS (ROW)
+----------------------------
+Patient: ${formData.name}
+Token No: ${assignedToken}
+Date: ${formData.dateOfRegistration}
+Status: ${isOfflineRecord ? 'OFFLINE (PENDING)' : 'OFFICIAL'}
+----------------------------
+        `;
+        const element = document.createElement("a");
+        const file = new Blob([text], { type: 'text/plain' });
+        element.href = URL.createObjectURL(file);
+        element.download = `ROW-Token-${assignedToken}.txt`;
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -90,6 +175,16 @@ export function AddBeneficiaryPage() {
                 <div>
                     <h1 className="text-2xl font-bold text-text-main">Add New Beneficiary</h1>
                     <p className="text-text-muted">Register a new patient into the system.</p>
+                </div>
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-sm transition-colors ${isOnline
+                    ? 'bg-green-50 text-green-700 border-green-100'
+                    : 'bg-orange-50 text-orange-700 border-orange-100'
+                    }`}>
+                    {isOnline ? (
+                        <><Wifi size={16} /> <span className="text-xs font-bold uppercase tracking-wider">Online Mode</span></>
+                    ) : (
+                        <><WifiOff size={16} /> <span className="text-xs font-bold uppercase tracking-wider">Offline Mode</span></>
+                    )}
                 </div>
             </div>
 
@@ -272,6 +367,102 @@ export function AddBeneficiaryPage() {
                     </div>
                 </form>
             </Card>
+
+            {/* Success Modal Popup */}
+            {showSuccessModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden animate-in zoom-in-95 duration-300">
+                        <div className="bg-primary p-8 text-center text-white">
+                            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-white/30">
+                                <span className="text-4xl">✅</span>
+                            </div>
+                            <h2 className="text-2xl font-black mb-1">Registration Successful!</h2>
+                            <p className="text-white/80 text-sm">Patient has been registered</p>
+                        </div>
+
+                        <div className="p-8 text-center">
+                            <p className="text-text-muted text-xs uppercase font-bold tracking-widest mb-2">
+                                {isOfflineRecord ? 'Temporary Offline Token' : 'Official Token Number'}
+                            </p>
+                            <div className="text-6xl font-black text-primary mb-2 tabular-nums">
+                                {assignedToken ? `#${assignedToken}` : 'N/A'}
+                            </div>
+
+                            {isOfflineRecord && (
+                                <div className="mb-6 flex flex-col items-center gap-1">
+                                    <div className="flex items-center gap-1.5 px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-[10px] font-bold uppercase border border-orange-100">
+                                        <WifiOff size={12} /> Pending Sync
+                                    </div>
+                                    <p className="text-[10px] text-text-muted max-w-[200px] leading-tight">
+                                        This record is saved locally and will sync when internet returns.
+                                    </p>
+                                </div>
+                            )}
+
+                            {!assignedToken && !isOfflineRecord && (
+                                <p className="text-red-500 text-[10px] font-bold mb-4">
+                                    Warning: Token column or trigger missing in Supabase.
+                                </p>
+                            )}
+
+                            <div className="space-y-3">
+                                <Button
+                                    onClick={() => navigate('/beneficiary/list')}
+                                    className="w-full py-4 rounded-xl text-lg font-bold"
+                                >
+                                    Go to List
+                                </Button>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Button
+                                        variant="outline"
+                                        onClick={handlePrintToken}
+                                        className="flex items-center justify-center gap-2 py-3 rounded-xl font-bold border-2"
+                                    >
+                                        <Printer size={18} /> Print Slip
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        onClick={handleDownloadToken}
+                                        className="flex items-center justify-center gap-2 py-3 rounded-xl font-bold border-2"
+                                    >
+                                        <Download size={18} /> Save Text
+                                    </Button>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setShowSuccessModal(false);
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            name: '',
+                                            age: '',
+                                            mobileNo: ''
+                                        }));
+                                    }}
+                                    className="w-full text-text-muted hover:text-text-main font-semibold transition-colors py-2"
+                                >
+                                    Add Another Patient
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Hidden printable token slip */}
+            <style>{printStyles}</style>
+            <div id="printable-token" className="hidden">
+                <div style={{ padding: '20px', border: '1px solid #ccc', borderRadius: '10px' }}>
+                    <h1 style={{ fontSize: '24px', margin: '0 0 10px 0' }}>REHAB ON WHEELS (ROW)</h1>
+                    <p style={{ margin: '5px 0' }}>Community Outreach Program</p>
+                    <hr style={{ margin: '15px 0' }} />
+                    <p style={{ fontSize: '14px', textTransform: 'uppercase', color: '#666' }}>Patient Token</p>
+                    <div style={{ fontSize: '60px', fontWeight: 'bold', margin: '10px 0' }}>#{assignedToken}</div>
+                    <p style={{ fontSize: '18px', fontWeight: 'bold' }}>{formData.name}</p>
+                    <p style={{ fontSize: '14px' }}>Date: {formData.dateOfRegistration}</p>
+                    <div style={{ marginTop: '20px', fontSize: '12px', color: '#999' }}>
+                        This is a computer generated slip for the ROW project.
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

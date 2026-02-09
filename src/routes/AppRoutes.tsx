@@ -14,6 +14,8 @@ import { ServiceEntryPage } from '../pages/services/ServiceEntry';
 import { ServiceHistoryPage } from '../pages/services/ServiceHistory';
 import { ReportsPage } from '../pages/reports/Reports';
 import { SettingsPage } from '../pages/settings/Settings';
+import { SyncDashboardPage } from '../pages/admin/SyncDashboard';
+import { AdminControlPage } from '../pages/admin/AdminControl';
 import { NotFoundPage } from '../pages/NotFound';
 import { ProtectedRoute } from './ProtectedRoute';
 
@@ -89,6 +91,14 @@ export const router = createBrowserRouter([
                     {
                         path: 'settings',
                         element: <SettingsPage />,
+                    },
+                    {
+                        path: 'admin/control',
+                        element: <AdminControlPage />,
+                    },
+                    {
+                        path: 'sync',
+                        element: <SyncDashboardPage />,
                     },
                 ]
             }

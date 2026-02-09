@@ -5,7 +5,7 @@ import type { Trip } from '@/types/trip';
 import { getLocationByName, BASE_LOCATION } from '@/data/locations';
 
 // Fix for default marker icons in Leaflet with modern bundlers
-// @ts-ignore
+// @ts-expect-error - Fix for default marker icons in Leaflet with modern bundlers
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
     iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -26,9 +26,15 @@ interface BusMapProps {
     trips: Trip[];
 }
 
+interface LocationPin {
+    coords: [number, number];
+    visits: number;
+    trips: Trip[];
+}
+
 export function BusMap({ trips }: BusMapProps) {
     // Group trips by location to show single pin for multiple visits
-    const locationPins = trips.reduce((acc: any, trip) => {
+    const locationPins = trips.reduce<Record<string, LocationPin>>((acc, trip) => {
         const locationData = getLocationByName(trip.location);
         if (locationData && locationData.coordinates) {
             if (!acc[trip.location]) {
@@ -70,7 +76,7 @@ export function BusMap({ trips }: BusMapProps) {
                 </Marker>
 
                 {/* dynamic Trip Markers */}
-                {Object.entries(locationPins).map(([name, data]: [string, any]) => (
+                {Object.entries(locationPins).map(([name, data]) => (
                     <Marker key={name} position={data.coords}>
                         <Popup>
                             <div className="p-1">

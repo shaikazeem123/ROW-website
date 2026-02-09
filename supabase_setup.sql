@@ -66,7 +66,7 @@ CREATE POLICY "Users can update their own trips." ON public.trips FOR UPDATE USI
 DROP POLICY IF EXISTS "Users can delete their own trips." ON public.trips;
 CREATE POLICY "Users can delete their own trips." ON public.trips FOR DELETE USING (auth.uid() = created_by);
 
--- 6. AUTOMATIC PROFILE CREATION (Optional but recommended)
+-- 6. AUTOMATIC PROFILE CREATION
 -- This function automatically creates a profile entry when a new user signs up via Auth
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
@@ -76,6 +76,12 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger to call handle_new_user on signup
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
 -- 7. BENEFICIARIES TABLE
 -- This stores individual patient/beneficiary details
@@ -102,6 +108,8 @@ CREATE TABLE IF NOT EXISTS public.beneficiaries (
   program TEXT,
   donor TEXT,
   economic_status TEXT,
+  token_no INTEGER,
+  offline_token TEXT UNIQUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   created_by UUID REFERENCES auth.users DEFAULT auth.uid()
@@ -120,10 +128,32 @@ CREATE POLICY "Authenticated users can insert beneficiaries." ON public.benefici
 DROP POLICY IF EXISTS "Users can update their own beneficiaries." ON public.beneficiaries;
 CREATE POLICY "Users can update their own beneficiaries." ON public.beneficiaries FOR UPDATE USING (auth.uid() = created_by);
 
-DROP POLICY IF EXISTS "Users can delete their own beneficiaries." ON public.beneficiaries;
-CREATE POLICY "Users can delete their own beneficiaries." ON public.beneficiaries FOR DELETE USING (auth.uid() = created_by);
+DROP POLICY IF EXISTS "Authenticated users can delete beneficiaries." ON public.beneficiaries;
+CREATE POLICY "Authenticated users can delete beneficiaries." ON public.beneficiaries FOR DELETE USING (auth.role() = 'authenticated');
 
--- 8. SERVICES TABLE
+-- 8. TOKEN SYSTEM TRIGGER
+-- Automatically assigns a serial token number per day for new beneficiaries
+CREATE OR REPLACE FUNCTION public.assign_token_no()
+RETURNS TRIGGER AS $$
+DECLARE
+    next_token INTEGER;
+BEGIN
+    SELECT COALESCE(MAX(token_no), 0) + 1
+    INTO next_token
+    FROM public.beneficiaries;
+    
+    NEW.token_no := next_token;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS set_token_no ON public.beneficiaries;
+CREATE TRIGGER set_token_no
+BEFORE INSERT ON public.beneficiaries
+FOR EACH ROW
+EXECUTE FUNCTION public.assign_token_no();
+
+-- 9. SERVICES TABLE
 -- Tracks individual service sessions provided to beneficiaries
 CREATE TABLE IF NOT EXISTS public.services (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -153,5 +183,5 @@ CREATE POLICY "Authenticated users can insert services." ON public.services FOR 
 DROP POLICY IF EXISTS "Users can update their own services." ON public.services;
 CREATE POLICY "Users can update their own services." ON public.services FOR UPDATE USING (auth.uid() = created_by);
 
-DROP POLICY IF EXISTS "Users can delete their own services." ON public.services;
-CREATE POLICY "Users can delete their own services." ON public.services FOR DELETE USING (auth.uid() = created_by);
+DROP POLICY IF EXISTS "Authenticated users can delete services." ON public.services;
+CREATE POLICY "Authenticated users can delete services." ON public.services FOR DELETE USING (auth.role() = 'authenticated');

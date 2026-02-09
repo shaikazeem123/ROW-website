@@ -8,8 +8,10 @@ import {
     History,
     BarChart3,
     Settings,
+    RefreshCw,
 } from 'lucide-react';
 import { NavItem } from './NavItem';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -20,6 +22,7 @@ const navItems = [
     { path: '/services/new', label: 'Service Entry', icon: Stethoscope },
     { path: '/services/history', label: 'Service History', icon: History },
     { path: '/reports', label: 'Reports & Analytics', icon: BarChart3 },
+    { path: '/sync', label: 'Sync Control', icon: RefreshCw },
     { path: '/settings', label: 'Settings & Admin', icon: Settings },
 ];
 
@@ -30,9 +33,23 @@ interface SidebarMenuProps {
 }
 
 export function SidebarMenu({ collapsed, mobileOpen, onMobileClose }: SidebarMenuProps) {
+    const { hasPageAccess } = usePermissions();
+
+    const filteredItems = navItems.filter(item => {
+        if (item.path === '/dashboard') return hasPageAccess('dashboard');
+        if (item.path === '/calendar') return hasPageAccess('dashboard');
+        if (item.path === '/tracking') return hasPageAccess('dashboard');
+        if (item.path.startsWith('/beneficiary')) return hasPageAccess('beneficiary');
+        if (item.path.startsWith('/services')) return hasPageAccess('services');
+        if (item.path === '/reports') return hasPageAccess('reports');
+        if (item.path === '/sync') return hasPageAccess('admin'); // Only Admin
+        if (item.path === '/settings') return hasPageAccess('settings');
+        return true;
+    });
+
     return (
         <nav className="flex-1 overflow-y-auto py-6 space-y-1 px-3">
-            {navItems.map((item) => (
+            {filteredItems.map((item) => (
                 <NavItem
                     key={item.path}
                     {...item}

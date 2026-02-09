@@ -13,19 +13,16 @@ interface SidebarProps {
     onMobileClose: () => void;
 }
 
-export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onMobileClose }: SidebarProps) {
-    const { logout } = useAuth();
+interface SidebarContentProps {
+    collapsed: boolean;
+    mobileOpen: boolean;
+    onMobileClose: () => void;
+    onToggleCollapse: () => void;
+    logout: () => Promise<void>;
+}
 
-    // Mobile overlay styles
-    const mobileClasses = mobileOpen
-        ? "absolute inset-y-0 left-0 z-30 translate-x-0 w-64 shadow-xl"
-        : "absolute inset-y-0 left-0 z-30 -translate-x-full w-64";
-
-    // Desktop styles
-    const desktopClasses = `hidden md:flex flex-col bg-surface border-r border-gray-200 h-full transition-all duration-300 ease-in-out ${collapsed ? "w-20" : "w-64"
-        }`;
-
-    const SidebarContent = () => (
+function SidebarContent({ collapsed, mobileOpen, onMobileClose, onToggleCollapse, logout }: SidebarContentProps) {
+    return (
         <div className="flex flex-col h-full bg-surface">
             <div className={`h-16 flex items-center border-b border-gray-100 ${collapsed ? 'justify-center' : 'px-6 justify-between'}`}>
                 {!collapsed && <span className="font-bold text-2xl text-primary tracking-tight">ROW</span>}
@@ -66,6 +63,18 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onMobileClose
             </div>
         </div>
     );
+}
+
+export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onMobileClose }: SidebarProps) {
+    const { logout } = useAuth();
+
+    // Mobile overlay styles
+    const mobileClasses = mobileOpen
+        ? "absolute inset-y-0 left-0 z-30 translate-x-0 w-64 shadow-xl"
+        : "absolute inset-y-0 left-0 z-30 -translate-x-full w-64";
+
+    // Desktop styles
+    const desktopClasses = `hidden md:flex flex-col bg-surface border-r border-gray-200 h-full transition-all duration-300 ease-in-out ${collapsed ? "w-20" : "w-64"}`;
 
     return (
         <>
@@ -79,12 +88,24 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onMobileClose
 
             {/* Mobile Sidebar */}
             <aside className={`md:hidden ${mobileClasses} transition-transform duration-300 ease-in-out`}>
-                <SidebarContent />
+                <SidebarContent
+                    collapsed={collapsed}
+                    mobileOpen={mobileOpen}
+                    onMobileClose={onMobileClose}
+                    onToggleCollapse={onToggleCollapse}
+                    logout={logout}
+                />
             </aside>
 
             {/* Desktop Sidebar */}
             <aside className={desktopClasses}>
-                <SidebarContent />
+                <SidebarContent
+                    collapsed={collapsed}
+                    mobileOpen={mobileOpen}
+                    onMobileClose={onMobileClose}
+                    onToggleCollapse={onToggleCollapse}
+                    logout={logout}
+                />
             </aside>
         </>
     );

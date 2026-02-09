@@ -88,7 +88,7 @@ export function BeneficiaryProfilePage() {
                     <div>
                         <h1 className="text-2xl font-bold text-text-main">{beneficiary.name}</h1>
                         <p className="text-text-muted flex items-center gap-2">
-                            ID: {beneficiary.id.slice(0, 8)} • Registered on {new Date(beneficiary.date_of_registration).toLocaleDateString()}
+                            Token: <span className="text-primary font-bold">#{beneficiary.token_no || 'N/A'}</span> • ID: {beneficiary.id.slice(0, 8)} • Registered on {new Date(beneficiary.date_of_registration).toLocaleDateString()}
                         </p>
                     </div>
                 </div>
@@ -133,6 +133,12 @@ export function BeneficiaryProfilePage() {
                                     {beneficiary.mobile_no || 'No contact'}
                                 </p>
                             </div>
+                            {beneficiary.token_no && (
+                                <div className="p-3 bg-primary/5 rounded-lg border border-primary/10">
+                                    <p className="text-[10px] text-primary uppercase font-bold tracking-widest ">Today's Token Number</p>
+                                    <p className="text-2xl font-black text-primary">#{beneficiary.token_no}</p>
+                                </div>
+                            )}
                         </div>
                     </Card>
 

@@ -1,11 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { TokenService } from '@/services/tokenService';
 
 export function AppLayout() {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+    useEffect(() => {
+        // Initialize token sequence on login/mount
+        TokenService.getLastToken();
+    }, []);
 
     return (
         <div className="flex h-screen bg-background text-text-main font-sans overflow-hidden">

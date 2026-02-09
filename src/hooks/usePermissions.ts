@@ -1,0 +1,14 @@
+import { useAuth } from '@/context/AuthContext';
+import { ROLE_PERMISSIONS } from '@/types/rbac';
+
+export function usePermissions() {
+    const { role } = useAuth();
+    const permissions = ROLE_PERMISSIONS[role];
+
+    return {
+        role,
+        permissions,
+        can: (action: keyof typeof permissions) => permissions[action],
+        hasPageAccess: (page: string) => permissions.accessiblePages.includes(page)
+    };
+}
