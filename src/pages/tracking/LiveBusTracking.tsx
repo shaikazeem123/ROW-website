@@ -28,9 +28,11 @@ export function LiveBusTrackingPage() {
         start: new Date().toISOString().split('T')[0],
         end: new Date().toISOString().split('T')[0]
     });
+    const [upcomingCamps, setUpcomingCamps] = useState<any[]>([]);
 
     useEffect(() => {
         loadTrips();
+        loadUpcomingCamps();
     }, []);
 
     useEffect(() => {
@@ -72,6 +74,26 @@ export function LiveBusTrackingPage() {
             setTrips(mappedTrips);
         } catch (error) {
             console.error('Error loading trips:', error);
+        }
+    };
+
+    const loadUpcomingCamps = async () => {
+        try {
+            const currentDate = new Date();
+
+            const { data, error } = await supabase
+                .from('monthly_schedules')
+                .select('*')
+                .eq('is_active', true)
+                .gte('scheduled_date', currentDate.toISOString().split('T')[0])
+                .order('scheduled_date', { ascending: true })
+                .limit(10);
+
+            if (error) throw error;
+
+            setUpcomingCamps(data || []);
+        } catch (error) {
+            console.error('Error loading camps:', error);
         }
     };
 
@@ -440,6 +462,56 @@ export function LiveBusTrackingPage() {
                     ) : (
                         <div className="text-center py-8">
                             <p className="text-text-muted text-sm">No trips yet</p>
+                        </div>
+                    )}
+                </Card>
+
+                {/* Upcoming Camps - Current Month */}
+                <Card className="lg:col-span-2">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="font-semibold text-lg text-text-main flex items-center gap-2">
+                            <Calendar className="text-primary" size={20} />
+                            Upcoming Camps
+                        </h3>
+                    </div>
+
+                    {upcomingCamps.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {upcomingCamps.map((camp, index) => (
+                                <div key={index} className={`p-3 border rounded-lg ${camp.status === 'completed'
+                                    ? 'bg-green-50 border-green-200'
+                                    : 'bg-blue-50 border-blue-100'
+                                    }`}>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-xs font-bold uppercase" style={{
+                                            color: camp.status === 'completed' ? '#166534' : '#1e3a8a'
+                                        }}>
+                                            {new Date(camp.scheduled_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                        </span>
+                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${camp.status === 'completed'
+                                            ? 'text-green-700 bg-green-100'
+                                            : 'text-blue-600 bg-blue-100'
+                                            }`}>
+                                            {camp.status === 'completed' ? '✓ Completed' : 'Scheduled'}
+                                        </span>
+                                    </div>
+                                    <h4 className="font-semibold text-sm text-blue-900 mb-1">
+                                        <MapPin className="inline w-3 h-3 mr-1" />
+                                        {camp.location_name}
+                                    </h4>
+                                    {camp.address && (
+                                        <p className="text-xs text-blue-700 line-clamp-2">
+                                            {camp.address}
+                                        </p>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-8 bg-gray-50 rounded-lg">
+                            <Calendar size={32} className="mx-auto text-gray-300 mb-2" />
+                            <p className="text-text-muted text-sm">No upcoming camps scheduled</p>
+                            <p className="text-xs text-text-muted mt-1">Upload monthly schedule in Admin Control</p>
                         </div>
                     )}
                 </Card>

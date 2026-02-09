@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Bus, Save, Calculator, MapPin, Clock, Users, Fuel, Edit2 } from 'lucide-react';
+import { Bus, Save, Calculator, MapPin, Clock, Users, Fuel, Edit2, CheckCircle } from 'lucide-react';
 import { Card } from '@/components/common/Card';
 import { Input } from '@/components/common/Input';
 import { Select } from '@/components/common/Select';
 import { Button } from '@/components/common/Button';
-import { LOCATIONS, BASE_LOCATION, getLocationByName } from '@/data/locations';
+import { LOCATIONS, BASE_LOCATION, getLocationByName } from '@/data/locations'; // Keep as fallback
 import { calculateDistance, calculateDuration, calculateFuelEfficiency } from '@/utils/googleMaps';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
@@ -41,6 +41,8 @@ export function TripEntryPage() {
     });
 
     const [isCalculating, setIsCalculating] = useState(false);
+    const [dynamicLocations, setDynamicLocations] = useState<string[]>([]);
+    const [todayScheduledLocation, setTodayScheduledLocation] = useState<string | null>(null);
 
     // Load trip data in edit mode
     useEffect(() => {
@@ -85,6 +87,71 @@ export function TripEntryPage() {
 
         fetchTrip();
     }, [id, isEditMode]);
+
+    // Fetch dynamic locations based on form date
+    useEffect(() => {
+        const fetchLocations = async () => {
+            try {
+                // Parse the selected date to get month/year
+                const selectedDate = new Date(formData.date);
+                if (isNaN(selectedDate.getTime())) return;
+
+                const month = selectedDate.getMonth() + 1;
+                const year = selectedDate.getFullYear();
+
+                const { data, error } = await supabase
+                    .from('monthly_schedules')
+                    .select('location_name')
+                    .eq('is_active', true)
+                    .eq('month', month)
+                    .eq('year', year);
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    const uniqueLocations = [...new Set(data.map(item => item.location_name))];
+                    setDynamicLocations(uniqueLocations);
+                } else {
+                    setDynamicLocations(LOCATIONS.map(loc => loc.name));
+                }
+            } catch (err) {
+                console.error('Error fetching locations:', err);
+                setDynamicLocations(LOCATIONS.map(loc => loc.name));
+            }
+        };
+
+        fetchLocations();
+    }, [formData.date]);
+
+    // Fetch today's scheduled location for auto-suggest
+    useEffect(() => {
+        const fetchTodayScheduledLocation = async () => {
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const { data, error } = await supabase
+                    .from('monthly_schedules')
+                    .select('location_name')
+                    .eq('scheduled_date', today)
+                    .eq('is_active', true)
+                    .single();
+
+                if (error && error.code !== 'PGRST116') {
+                    throw error;
+                }
+
+                if (data) {
+                    setTodayScheduledLocation(data.location_name);
+                    if (!isEditMode && !formData.location && formData.date === today) {
+                        setFormData(prev => ({ ...prev, location: data.location_name }));
+                    }
+                }
+            } catch (err) {
+                console.error("Error fetching today's scheduled location:", err);
+            }
+        };
+
+        fetchTodayScheduledLocation();
+    }, [isEditMode, formData.date]);
 
     // Auto-calculate distance when location is selected
     useEffect(() => {
@@ -298,10 +365,15 @@ export function TripEntryPage() {
                                     onChange={handleChange}
                                     options={[
                                         { value: '', label: '-- Select Location --' },
-                                        ...LOCATIONS.map(loc => ({ value: loc.name, label: loc.name }))
+                                        ...dynamicLocations.map(loc => ({ value: loc, label: loc }))
                                     ]}
                                     required
                                 />
+                                {todayScheduledLocation && formData.location === todayScheduledLocation && (
+                                    <p className="text-sm text-green-700 mt-2 flex items-center gap-1">
+                                        <CheckCircle size={14} /> Auto-suggested: This location is scheduled for today
+                                    </p>
+                                )}
                                 {isCalculating && (
                                     <p className="text-sm text-blue-700 mt-2">Calculating distance...</p>
                                 )}

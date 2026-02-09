@@ -4,11 +4,13 @@ import { Button } from '@/components/common/Button';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { type UserRole, type UserProfile } from '@/types/rbac';
-import { Shield, Users, Activity, Lock, Search, Check, X, RefreshCw, Key } from 'lucide-react';
+import { Shield, Users, Activity, Lock, Search, Check, X, RefreshCw, Key, FileUp } from 'lucide-react';
+import { ScheduleUpload } from '@/components/admin/ScheduleUpload';
+import { ScheduleHistory } from '@/components/admin/ScheduleHistory';
 
 export function AdminControlPage() {
     const { role, user } = useAuth();
-    const [activeTab, setActiveTab] = useState<'users' | 'permissions' | 'logs'>('users');
+    const [activeTab, setActiveTab] = useState<'users' | 'permissions' | 'logs' | 'schedule'>('users');
     const [users, setUsers] = useState<UserProfile[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -148,6 +150,12 @@ export function AdminControlPage() {
                     className={`px-4 py-3 font-medium text-sm transition-colors flex flex-shrink-0 items-center gap-2 ${activeTab === 'logs' ? 'border-b-2 border-primary text-primary' : 'text-text-muted hover:text-text-main'}`}
                 >
                     <Activity size={16} /> Audit Logs
+                </button>
+                <button
+                    onClick={() => setActiveTab('schedule')}
+                    className={`px-4 py-3 font-medium text-sm transition-colors flex flex-shrink-0 items-center gap-2 ${activeTab === 'schedule' ? 'border-b-2 border-primary text-primary' : 'text-text-muted hover:text-text-main'}`}
+                >
+                    <FileUp size={16} /> Schedule Management
                 </button>
             </div>
 
@@ -325,6 +333,12 @@ export function AdminControlPage() {
                         </div>
                     )}
                 </Card>
+            )}
+            {activeTab === 'schedule' && (
+                <div className="space-y-6">
+                    <ScheduleUpload />
+                    <ScheduleHistory />
+                </div>
             )}
         </div>
     );
