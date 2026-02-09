@@ -7,7 +7,7 @@ import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { Save, Wifi, WifiOff, Printer, Download } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/lib/db';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { OfflineStorage } from '@/utils/offlineUtils';
@@ -132,9 +132,10 @@ export function AddBeneficiaryPage() {
             setShowSuccessModal(true);
 
             // Note: We don't navigate immediately anymore so the user can see the token popup
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error saving beneficiary:', error);
-            alert(error.message || 'Failed to save beneficiary');
+            const message = error instanceof Error ? error.message : 'Failed to save beneficiary';
+            alert(message);
         } finally {
             setIsLoading(false);
         }

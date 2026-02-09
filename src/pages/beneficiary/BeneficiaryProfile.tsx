@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/common/Card';
@@ -9,25 +9,31 @@ import {
     Phone,
     Calendar,
     ArrowLeft,
+    Activity,
+    Plus,
     Clock,
-    Stethoscope,
-    Activity
+    Stethoscope
 } from 'lucide-react';
+import type { OfflineBeneficiary } from '@/lib/db';
+
+interface Service {
+    id: string;
+    service_type: string;
+    service_date: string;
+    provider_name?: string;
+    venue?: string;
+    notes?: string;
+    fee_charged?: number;
+}
 
 export function BeneficiaryProfilePage() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const [beneficiary, setBeneficiary] = useState<any>(null);
-    const [services, setServices] = useState<any[]>([]);
+    const [beneficiary, setBeneficiary] = useState<OfflineBeneficiary | null>(null);
+    const [services, setServices] = useState<Service[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        if (id) {
-            fetchData();
-        }
-    }, [id]);
-
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
             // Fetch beneficiary details
@@ -55,7 +61,13 @@ export function BeneficiaryProfilePage() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [id]);
+
+    useEffect(() => {
+        if (id) {
+            fetchData();
+        }
+    }, [id, fetchData]);
 
     if (isLoading) {
         return (
@@ -88,7 +100,7 @@ export function BeneficiaryProfilePage() {
                     <div>
                         <h1 className="text-2xl font-bold text-text-main">{beneficiary.name}</h1>
                         <p className="text-text-muted flex items-center gap-2">
-                            Token: <span className="text-primary font-bold">#{beneficiary.token_no || 'N/A'}</span> • ID: {beneficiary.id.slice(0, 8)} • Registered on {new Date(beneficiary.date_of_registration).toLocaleDateString()}
+                            Token: <span className="text-primary font-bold">#{beneficiary.token_no || 'N/A'}</span> • ID: {beneficiary.id?.slice(0, 8) || 'N/A'} • Registered on {new Date(beneficiary.date_of_registration).toLocaleDateString()}
                         </p>
                     </div>
                 </div>
@@ -293,9 +305,3 @@ export function BeneficiaryProfilePage() {
     );
 }
 
-const Plus = ({ size = 18 }: { size?: number }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="12" y1="5" x2="12" y2="19"></line>
-        <line x1="5" y1="12" x2="19" y2="12"></line>
-    </svg>
-);

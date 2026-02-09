@@ -9,7 +9,7 @@ import { Button } from '@/components/common/Button';
 import { LOCATIONS, BASE_LOCATION, getLocationByName } from '@/data/locations'; // Keep as fallback
 import { calculateDistance, calculateDuration, calculateFuelEfficiency } from '@/utils/googleMaps';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 export function TripEntryPage() {
     const navigate = useNavigate();
@@ -265,9 +265,10 @@ export function TripEntryPage() {
             }
             // Navigate to tracking dashboard
             navigate('/tracking');
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error saving trip:', error);
-            alert(error.message || 'Error saving trip data');
+            const message = error instanceof Error ? error.message : 'Error saving trip data';
+            alert(message);
         }
     };
 

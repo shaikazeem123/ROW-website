@@ -19,7 +19,9 @@ export const SyncService = {
         for (const record of recordsToSync) {
             try {
                 // Remove local UI fields and metadata before syncing
-                const { id, sync_status, error_message, ...dataToSync } = record;
+                const dataToSync = Object.fromEntries(
+                    Object.entries(record).filter(([key]) => !['id', 'sync_status', 'error_message'].includes(key))
+                );
 
                 // Try to insert and get the assigned token_no
                 const { data, error } = await supabase
@@ -49,11 +51,12 @@ export const SyncService = {
                     }
                     console.log(`[SyncService] Successfully synced ${record.name} (Token: ${data.token_no})`);
                 }
-            } catch (err: any) {
+            } catch (err) {
                 console.error(`[SyncService] Sync failed for ${record.name}:`, err);
+                const message = err instanceof Error ? err.message : 'Unknown error';
                 await db.beneficiaries.update(record.id!, {
                     sync_status: 'failed',
-                    error_message: err.message || 'Unknown error'
+                    error_message: message
                 });
             }
         }

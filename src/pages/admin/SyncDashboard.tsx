@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { db } from '@/lib/db';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -14,13 +14,7 @@ export function SyncDashboardPage() {
     const [isSyncing, setIsSyncing] = useState(false);
     const [lastSync, setLastSync] = useState<string | null>(localStorage.getItem('last_sync_time'));
 
-    useEffect(() => {
-        loadCounts();
-        const interval = setInterval(loadCounts, 5000);
-        return () => clearInterval(interval);
-    }, []);
-
-    const loadCounts = async () => {
+    const loadCounts = useCallback(async () => {
         const pending = await db.beneficiaries.where('sync_status').equals('pending').count();
         const synced = await db.beneficiaries.where('sync_status').equals('synced').count();
         const failed = await db.beneficiaries.where('sync_status').equals('failed').count();
@@ -28,7 +22,16 @@ export function SyncDashboardPage() {
         setPendingCount(pending);
         setSyncedCount(synced);
         setFailedCount(failed);
-    };
+    }, []);
+
+    useEffect(() => {
+        const timeout = setTimeout(loadCounts, 0);
+        const interval = setInterval(loadCounts, 5000);
+        return () => {
+            clearTimeout(timeout);
+            clearInterval(interval);
+        };
+    }, [loadCounts]);
 
     const handleManualSync = async () => {
         if (!isOnline) {

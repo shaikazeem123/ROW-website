@@ -13,6 +13,13 @@ import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { screeningSchedule, getEventsByMonth } from '@/data/screeningSchedule';
 import { Link } from 'react-router-dom';
+import type { ScreeningEvent } from '@/types/screening';
+
+interface MappedCamp {
+    location: string;
+    date: string;
+    type: string;
+}
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -105,10 +112,10 @@ export function DashboardPage() {
     ];
 
     const upcomingCamps = screeningSchedule
-        .filter((event: any) => new Date(event.date) >= new Date())
-        .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        .filter((event: ScreeningEvent) => new Date(event.date) >= new Date())
+        .sort((a: ScreeningEvent, b: ScreeningEvent) => new Date(a.date).getTime() - new Date(b.date).getTime())
         .slice(0, 3)
-        .map((event: any) => ({
+        .map((event: ScreeningEvent) => ({
             location: event.location,
             date: new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
             type: event.purpose === 'Follow-up Session' ? 'Follow-up' : 'Screening'
@@ -229,7 +236,7 @@ export function DashboardPage() {
                             </a>
                         </div>
                         <div className="space-y-4">
-                            {upcomingCamps.map((camp: any, i: number) => (
+                            {upcomingCamps.map((camp: MappedCamp, i: number) => (
                                 <div key={i} className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100 cursor-pointer">
                                     <div className="flex flex-col items-center justify-center w-12 h-12 bg-primary/10 text-primary rounded-lg shrink-0">
                                         <span className="text-xs font-bold">{camp.date.split(' ')[0]}</span>

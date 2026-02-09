@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Select } from '@/components/common/Select';
@@ -37,13 +37,7 @@ export function EditBeneficiaryPage() {
         economicStatus: 'BPL',
     });
 
-    useEffect(() => {
-        if (id) {
-            fetchBeneficiary();
-        }
-    }, [id]);
-
-    const fetchBeneficiary = async () => {
+    const fetchBeneficiary = useCallback(async () => {
         setIsLoading(true);
         try {
             const { data, error } = await supabase
@@ -58,12 +52,12 @@ export function EditBeneficiaryPage() {
                 setFormData({
                     name: data.name,
                     age: data.age?.toString() || '',
-                    gender: data.gender || 'Male',
-                    dateOfRegistration: data.date_of_registration || '',
+                    gender: data.gender,
+                    dateOfRegistration: data.date_of_registration,
                     parentGuardian: data.parent_guardian || '',
-                    relationship: data.relationship || 'Father',
-                    beneficiaryType: data.beneficiary_type || 'Direct',
-                    status: data.status || 'Active',
+                    relationship: data.relationship || '',
+                    beneficiaryType: data.beneficiary_type,
+                    status: data.status,
                     address: data.address || '',
                     addressType: data.address_type || 'Permanent',
                     country: data.country || 'India',
@@ -72,20 +66,27 @@ export function EditBeneficiaryPage() {
                     city: data.city || '',
                     pincode: data.pincode || '',
                     mobileNo: data.mobile_no || '',
-                    purposeOfVisit: data.purpose_of_visit || 'Assessment',
-                    disabilityType: data.disability_type || 'Locomotor',
-                    program: data.program || 'Rehab on Wheels',
+                    purposeOfVisit: data.purpose_of_visit,
+                    disabilityType: data.disability_type,
+                    program: data.program,
                     donor: data.donor || '',
-                    economicStatus: data.economic_status || 'BPL',
+                    economicStatus: data.economic_status,
                 });
             }
         } catch (error) {
             console.error('Error fetching beneficiary:', error);
-            alert('Failed to load beneficiary data');
+            alert('Failed to load beneficiary details');
+            navigate('/beneficiary');
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [id, navigate]);
+
+    useEffect(() => {
+        if (id) {
+            fetchBeneficiary();
+        }
+    }, [id, fetchBeneficiary]);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -121,9 +122,10 @@ export function EditBeneficiaryPage() {
 
             if (error) throw error;
             navigate(`/beneficiary/${id}`);
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error updating beneficiary:', error);
-            alert(error.message || 'Failed to update beneficiary');
+            const message = error instanceof Error ? error.message : 'Failed to update beneficiary';
+            alert(message);
         } finally {
             setIsSaving(false);
         }

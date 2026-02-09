@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Settings as SettingsIcon, User, Bell, Shield, Database, LogOut, FileDown, Trash2, KeyRound, Lock, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -57,9 +57,10 @@ export function SettingsPage() {
             });
             if (error) throw error;
             alert('Password reset email sent. Please check your inbox.');
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error sending reset email:', error);
-            alert('Failed to send reset email: ' + error.message);
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            alert('Failed to send reset email: ' + message);
         }
     };
 
@@ -91,9 +92,10 @@ export function SettingsPage() {
             a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
-        } catch (error: any) {
+        } catch (error) {
             console.error('Export failed:', error);
-            alert('Failed to export data: ' + error.message);
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            alert('Failed to export data: ' + message);
         } finally {
             setIsExporting(false);
         }

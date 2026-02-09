@@ -4,7 +4,7 @@ import {
     LogOut
 } from 'lucide-react';
 import { SidebarMenu } from '../navigation/SidebarMenu';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SidebarProps {
     collapsed: boolean;

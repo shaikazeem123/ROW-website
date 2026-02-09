@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -25,13 +25,7 @@ export function ServiceEntryPage() {
         outcome: ''
     });
 
-    useEffect(() => {
-        if (beneficiaryId) {
-            fetchBeneficiaryName();
-        }
-    }, [beneficiaryId]);
-
-    const fetchBeneficiaryName = async () => {
+    const fetchBeneficiaryName = useCallback(async () => {
         setIsLoading(true);
         try {
             const { data, error } = await supabase
@@ -46,7 +40,13 @@ export function ServiceEntryPage() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [beneficiaryId]);
+
+    useEffect(() => {
+        if (beneficiaryId) {
+            fetchBeneficiaryName();
+        }
+    }, [beneficiaryId, fetchBeneficiaryName]);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -69,9 +69,10 @@ export function ServiceEntryPage() {
 
             if (error) throw error;
             navigate(`/beneficiary/${beneficiaryId}`);
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error saving service:', error);
-            alert(error.message || 'Failed to save service');
+            const message = error instanceof Error ? error.message : 'Failed to save service';
+            alert(message);
         } finally {
             setIsSaving(false);
         }

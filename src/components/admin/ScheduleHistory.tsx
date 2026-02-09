@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -22,11 +22,7 @@ export function ScheduleHistory() {
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<'all' | 'active' | 'archived'>('all');
 
-    useEffect(() => {
-        fetchSchedules();
-    }, [filter]);
-
-    const fetchSchedules = async () => {
+    const fetchSchedules = useCallback(async () => {
         setLoading(true);
         try {
             let query = supabase
@@ -51,7 +47,11 @@ export function ScheduleHistory() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [filter]);
+
+    useEffect(() => {
+        fetchSchedules();
+    }, [filter, fetchSchedules]);
 
     const handleArchiveSchedule = async (month: number, year: number) => {
         if (!confirm(`Archive all schedules for ${getMonthName(month)} ${year}?`)) return;
@@ -67,8 +67,9 @@ export function ScheduleHistory() {
 
             alert('Schedule archived successfully');
             fetchSchedules();
-        } catch (error: any) {
-            alert('Error archiving schedule: ' + error.message);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error occurred';
+            alert('Error archiving schedule: ' + message);
         }
     };
 
@@ -85,8 +86,9 @@ export function ScheduleHistory() {
 
             alert('Schedule deleted successfully');
             fetchSchedules();
-        } catch (error: any) {
-            alert('Error deleting schedule: ' + error.message);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error occurred';
+            alert('Error deleting schedule: ' + message);
         }
     };
 

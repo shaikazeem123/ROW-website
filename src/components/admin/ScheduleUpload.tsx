@@ -5,9 +5,15 @@ import { Card } from '@/components/common/Card';
 import { Upload, FileUp, AlertCircle, CheckCircle, Download } from 'lucide-react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 
+
+interface ScheduleRow {
+    location_name: string;
+    scheduled_date: string;
+    address?: string;
+}
 
 export function ScheduleUpload() {
     const [uploading, setUploading] = useState(false);
@@ -20,7 +26,6 @@ export function ScheduleUpload() {
         setMessage(null);
 
         try {
-            let data: any[] = [];
 
             if (file.name.endsWith('.csv')) {
                 // Parse CSV
@@ -28,7 +33,7 @@ export function ScheduleUpload() {
                     header: true,
                     skipEmptyLines: true,
                     complete: async (results) => {
-                        await uploadData(results.data);
+                        await uploadData(results.data as Record<string, unknown>[]);
                     },
                     error: (error) => {
                         throw new Error(`CSV Parse Error: ${error.message}`);
@@ -42,31 +47,32 @@ export function ScheduleUpload() {
                     const workbook = XLSX.read(binaryStr, { type: 'binary' });
                     const sheetName = workbook.SheetNames[0];
                     const sheet = workbook.Sheets[sheetName];
-                    data = XLSX.utils.sheet_to_json(sheet);
-                    await uploadData(data);
+                    const jsonData = XLSX.utils.sheet_to_json(sheet) as Record<string, unknown>[];
+                    await uploadData(jsonData);
                 };
                 reader.readAsBinaryString(file);
             } else {
                 throw new Error('Invalid file type. Please upload a CSV or Excel file.');
             }
-        } catch (error: any) {
-            setMessage({ type: 'error', text: error.message });
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+            setMessage({ type: 'error', text: errorMessage });
             setUploading(false);
         }
     };
 
-    const uploadData = async (rawData: any[]) => {
+    const uploadData = async (rawData: Record<string, unknown>[]) => {
         try {
             // 1. Validate Structure
             if (rawData.length === 0) throw new Error("File is empty.");
 
             // Normalize keys to lowercase to be safe
-            const normalizedData: any[] = rawData.map(row => {
-                const newRow: any = {};
+            const normalizedData = rawData.map(row => {
+                const newRow: Record<string, unknown> = {};
                 Object.keys(row).forEach(key => {
                     newRow[key.toLowerCase().trim().replace(/ /g, '_')] = row[key];
                 });
-                return newRow;
+                return newRow as unknown as ScheduleRow;
             });
 
             // Check for required columns
@@ -79,7 +85,7 @@ export function ScheduleUpload() {
             }
 
             // Helper function to parse various date formats
-            const parseDate = (dateStr: any): Date => {
+            const parseDate = (dateStr: string | number | Date): Date => {
                 // Handle Excel serial numbers
                 if (typeof dateStr === 'number') {
                     // Excel date serial number (days since 1900-01-01)
@@ -132,8 +138,9 @@ export function ScheduleUpload() {
             let firstDate: Date;
             try {
                 firstDate = parseDate(normalizedData[0].scheduled_date);
-            } catch (err: any) {
-                throw new Error(`Invalid date format in first row: ${err.message}`);
+            } catch (err) {
+                const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+                throw new Error(`Invalid date format in first row: ${errorMessage}`);
             }
 
             if (isNaN(firstDate.getTime())) {
@@ -159,8 +166,9 @@ export function ScheduleUpload() {
                 let parsedDate: Date;
                 try {
                     parsedDate = parseDate(row.scheduled_date);
-                } catch (err: any) {
-                    throw new Error(`Invalid date in row ${index + 1}: ${err.message}`);
+                } catch (err) {
+                    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+                    throw new Error(`Invalid date in row ${index + 1}: ${errorMessage}`);
                 }
 
                 if (isNaN(parsedDate.getTime())) {
@@ -209,9 +217,10 @@ export function ScheduleUpload() {
 
             setMessage({ type: 'success', text: `Successfully uploaded ${dbRows.length} schedule records for ${new Date(year, month - 1).toLocaleString('default', { month: 'long' })} ${year}.` });
 
-        } catch (error: any) {
+        } catch (error) {
             console.error(error);
-            setMessage({ type: 'error', text: error.message || "Upload failed." });
+            const errorMessage = error instanceof Error ? error.message : "Upload failed.";
+            setMessage({ type: 'error', text: errorMessage });
         } finally {
             setUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';

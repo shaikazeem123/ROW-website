@@ -32,7 +32,7 @@ export interface OfflineBeneficiary {
 
 export interface AppMetadata {
     key: string;
-    value: any;
+    value: unknown;
 }
 
 export class ROWDatabase extends Dexie {

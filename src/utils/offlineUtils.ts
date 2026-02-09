@@ -3,7 +3,7 @@ import CryptoJS from 'crypto-js';
 const ENCRYPTION_KEY = import.meta.env.VITE_OFFLINE_SECRET || 'row-outreach-default-secret';
 
 export const OfflineStorage = {
-    encrypt: (data: any) => {
+    encrypt: (data: unknown) => {
         return CryptoJS.AES.encrypt(JSON.stringify(data), ENCRYPTION_KEY).toString();
     },
 

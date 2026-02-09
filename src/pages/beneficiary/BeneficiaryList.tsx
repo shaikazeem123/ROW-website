@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -8,25 +8,27 @@ import { exportBeneficiariesToCSV } from '@/utils/beneficiaryExport';
 import { db } from '@/lib/db';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { usePermissions } from '@/hooks/usePermissions';
+import type { OfflineBeneficiary } from '@/lib/db';
+
+interface BeneficiaryItem extends Partial<OfflineBeneficiary> {
+    id?: string;
+    isOffline?: boolean;
+}
 
 export function BeneficiaryListPage() {
     const isOnline = useOnlineStatus();
-    const [beneficiaries, setBeneficiaries] = useState<any[]>([]);
+    const [beneficiaries, setBeneficiaries] = useState<BeneficiaryItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isDeleting, setIsDeleting] = useState(false);
     const { canDeleteRecords } = usePermissions();
 
-    useEffect(() => {
-        fetchBeneficiaries();
-    }, [isOnline]); // Refetch when coming back online
-
-    const fetchBeneficiaries = async () => {
+    const fetchBeneficiaries = useCallback(async () => {
         setIsLoading(true);
         try {
             // 1. Fetch from Supabase (if online)
-            let serverData: any[] = [];
+            let serverData: BeneficiaryItem[] = [];
             if (isOnline) {
                 const { data, error } = await supabase
                     .from('beneficiaries')
@@ -51,17 +53,21 @@ export function BeneficiaryListPage() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [isOnline]);
+
+    useEffect(() => {
+        fetchBeneficiaries();
+    }, [isOnline, fetchBeneficiaries]); // Refetch when coming back online
 
     const handleDelete = async (id: string, name: string) => {
         if (!window.confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) return;
 
         setIsDeleting(true);
         try {
-            // Check if it's a local-only record
-            const localRecord = await db.beneficiaries.get(id as any);
+            // Check if it's a local-only record (Dexie might use number or string for ID depending on schema)
+            const localRecord = await db.beneficiaries.get(id);
             if (localRecord) {
-                await db.beneficiaries.delete(id as any);
+                await db.beneficiaries.delete(id);
             }
 
             if (isOnline) {
@@ -75,8 +81,9 @@ export function BeneficiaryListPage() {
 
             setBeneficiaries(prev => prev.filter(b => b.id !== id));
             setSelectedIds(prev => prev.filter(selectedId => selectedId !== id));
-        } catch (error: any) {
-            alert(error.message || 'Failed to delete beneficiary');
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to delete beneficiary';
+            alert(message);
         } finally {
             setIsDeleting(false);
         }
@@ -88,7 +95,7 @@ export function BeneficiaryListPage() {
         setIsDeleting(true);
         try {
             // Delete from local DB
-            await db.beneficiaries.bulkDelete(selectedIds as any[]);
+            await db.beneficiaries.bulkDelete(selectedIds);
 
             if (isOnline) {
                 const { error } = await supabase
@@ -99,10 +106,11 @@ export function BeneficiaryListPage() {
                 if (error) console.error('Server bulk delete failed:', error);
             }
 
-            setBeneficiaries(prev => prev.filter(b => !selectedIds.includes(b.id)));
+            setBeneficiaries(prev => prev.filter(b => !b.id || !selectedIds.includes(b.id)));
             setSelectedIds([]);
-        } catch (error: any) {
-            alert(error.message || 'Failed to delete beneficiaries');
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to delete beneficiaries';
+            alert(message);
         } finally {
             setIsDeleting(false);
         }
@@ -120,7 +128,10 @@ export function BeneficiaryListPage() {
         if (selectedIds.length === filteredBeneficiaries.length) {
             setSelectedIds([]);
         } else {
-            setSelectedIds(filteredBeneficiaries.map(b => b.id));
+            const ids = filteredBeneficiaries
+                .map(b => b.id)
+                .filter((id): id is string => id !== undefined);
+            setSelectedIds(ids);
         }
     };
 
@@ -129,7 +140,7 @@ export function BeneficiaryListPage() {
     };
 
     const filteredBeneficiaries = beneficiaries.filter(b =>
-        b.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (b.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         b.mobile_no?.includes(searchTerm)
     );
 
@@ -202,89 +213,96 @@ export function BeneficiaryListPage() {
                     </div>
                 ) : filteredBeneficiaries.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {filteredBeneficiaries.map((b) => (
-                            <Link key={b.id || b.offline_token} to={b.isOffline ? '#' : `/beneficiary/${b.id}`}>
-                                <Card className={`p-4 hover:shadow-md transition-all cursor-pointer border-l-4 relative group ${selectedIds.includes(b.id) ? 'border-l-primary bg-primary/5 ring-1 ring-primary/20' : 'border-l-gray-300'}`}>
-                                    {/* Sync Status Badge */}
-                                    <div className="absolute top-3 right-10 z-10">
-                                        {b.sync_status === 'pending' || b.sync_status === 'failed' ? (
-                                            <div className="flex items-center gap-1 px-2 py-0.5 bg-orange-50 text-orange-600 rounded text-[10px] font-bold border border-orange-100">
-                                                <CloudOff size={10} /> Pending
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-600 rounded text-[10px] font-bold border border-green-100">
-                                                <CloudCheck size={10} /> Synced
-                                            </div>
-                                        )}
-                                    </div>
+                        {filteredBeneficiaries.map((b) => {
+                            const stableId = b.id || b.offline_token;
+                            if (!stableId) return null;
 
-                                    {/* Selection Checkbox */}
-                                    <div
-                                        onClick={(e) => toggleSelect(e, b.id)}
-                                        className="absolute top-3 right-3 z-10 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                        {selectedIds.includes(b.id) ? (
-                                            <div className="bg-primary text-white rounded-md p-1 shadow-sm">
-                                                <CheckSquare size={16} />
-                                            </div>
-                                        ) : (
-                                            <div className="bg-white text-gray-400 rounded-md p-1 border border-gray-200 shadow-sm hover:text-primary">
-                                                <Square size={16} />
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="flex items-start gap-4">
-                                        <div className="p-3 bg-primary/10 rounded-full text-primary relative">
-                                            <User size={24} />
-                                            {(b.token_no || b.offline_token) && (
-                                                <div className={`absolute -top-1 -right-1 text-white text-[10px] font-black w-6 h-6 flex items-center justify-center rounded-full border-2 border-white shadow-sm ${b.sync_status === 'synced' ? 'bg-primary' : 'bg-orange-500'}`}>
-                                                    {b.token_no || (b.offline_token ? b.offline_token.split('-').pop() : '!')}
+                            return (
+                                <Link key={stableId} to={b.isOffline ? '#' : `/beneficiary/${b.id}`}>
+                                    <Card className={`p-4 hover:shadow-md transition-all cursor-pointer border-l-4 relative group ${b.id && selectedIds.includes(b.id) ? 'border-l-primary bg-primary/5 ring-1 ring-primary/20' : 'border-l-gray-300'}`}>
+                                        {/* Sync Status Badge */}
+                                        <div className="absolute top-3 right-10 z-10">
+                                            {b.sync_status === 'pending' || b.sync_status === 'failed' ? (
+                                                <div className="flex items-center gap-1 px-2 py-0.5 bg-orange-50 text-orange-600 rounded text-[10px] font-bold border border-orange-100">
+                                                    <CloudOff size={10} /> Pending
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-600 rounded text-[10px] font-bold border border-green-100">
+                                                    <CloudCheck size={10} /> Synced
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="flex-1 min-w-0 pr-6">
-                                            <div className="flex items-center justify-between gap-2">
-                                                <h3 className="font-semibold text-text-main truncate">{b.name}</h3>
-                                            </div>
-                                            <p className="text-sm text-text-muted">{b.age} years • {b.gender}</p>
 
-                                            {b.sync_status === 'failed' && (
-                                                <p className="text-[10px] text-red-500 font-bold mt-1 bg-red-50 px-2 py-0.5 rounded border border-red-100 flex items-center gap-1">
-                                                    <AlertTriangle size={10} /> Sync Error: {b.error_message?.substring(0, 30)}...
-                                                </p>
-                                            )}
-
-                                            <div className="mt-3 space-y-1">
-                                                <p className="text-xs text-text-muted flex items-center gap-2">
-                                                    <MapPin size={14} /> {b.city || b.district || 'No address'}
-                                                </p>
-                                                <p className="text-xs text-text-muted flex items-center gap-2">
-                                                    <Phone size={14} /> {b.mobile_no || 'No phone'}
-                                                </p>
-                                            </div>
-
-                                            {/* Action Buttons */}
-                                            <div className="mt-4 pt-4 border-t border-gray-100 flex justify-end">
-                                                {canDeleteRecords && (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            e.stopPropagation();
-                                                            handleDelete(b.id || b.offline_token, b.name);
-                                                        }}
-                                                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1 text-xs font-bold"
-                                                        disabled={isDeleting}
-                                                    >
-                                                        <Trash2 size={14} /> Delete
-                                                    </button>
+                                        {/* Selection Checkbox */}
+                                        {b.id && (
+                                            <div
+                                                onClick={(e) => toggleSelect(e, b.id!)}
+                                                className="absolute top-3 right-3 z-10 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                {selectedIds.includes(b.id) ? (
+                                                    <div className="bg-primary text-white rounded-md p-1 shadow-sm">
+                                                        <CheckSquare size={16} />
+                                                    </div>
+                                                ) : (
+                                                    <div className="bg-white text-gray-400 rounded-md p-1 border border-gray-200 shadow-sm hover:text-primary">
+                                                        <Square size={16} />
+                                                    </div>
                                                 )}
                                             </div>
+                                        )}
+
+                                        <div className="flex items-start gap-4">
+                                            <div className="p-3 bg-primary/10 rounded-full text-primary relative">
+                                                <User size={24} />
+                                                {(b.token_no || b.offline_token) && (
+                                                    <div className={`absolute -top-1 -right-1 text-white text-[10px] font-black w-6 h-6 flex items-center justify-center rounded-full border-2 border-white shadow-sm ${b.sync_status === 'synced' ? 'bg-primary' : 'bg-orange-500'}`}>
+                                                        {b.token_no || (b.offline_token ? b.offline_token.split('-').pop() : '!')}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0 pr-6">
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <h3 className="font-semibold text-text-main truncate">{b.name}</h3>
+                                                </div>
+                                                <p className="text-sm text-text-muted">{b.age} years • {b.gender}</p>
+
+                                                {b.sync_status === 'failed' && (
+                                                    <p className="text-[10px] text-red-500 font-bold mt-1 bg-red-50 px-2 py-0.5 rounded border border-red-100 flex items-center gap-1">
+                                                        <AlertTriangle size={10} /> Sync Error: {b.error_message?.substring(0, 30)}...
+                                                    </p>
+                                                )}
+
+                                                <div className="mt-3 space-y-1">
+                                                    <p className="text-xs text-text-muted flex items-center gap-2">
+                                                        <MapPin size={14} /> {b.city || b.district || 'No address'}
+                                                    </p>
+                                                    <p className="text-xs text-text-muted flex items-center gap-2">
+                                                        <Phone size={14} /> {b.mobile_no || 'No phone'}
+                                                    </p>
+                                                </div>
+
+                                                {/* Action Buttons */}
+                                                <div className="mt-4 pt-4 border-t border-gray-100 flex justify-end">
+                                                    {canDeleteRecords && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                e.stopPropagation();
+                                                                handleDelete(stableId, b.name || 'Unknown');
+                                                            }}
+                                                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1 text-xs font-bold"
+                                                            disabled={isDeleting}
+                                                        >
+                                                            <Trash2 size={14} /> Delete
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </Card>
-                            </Link>
-                        ))}
+                                    </Card>
+                                </Link>
+                            );
+                        })}
                     </div>
                 ) : (
                     <div className="text-center py-12 text-text-muted">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
     Bus,
@@ -20,6 +20,15 @@ import { exportTripsToCSV } from '@/utils/exportUtils';
 import { supabase } from '@/lib/supabase';
 import { BusMap } from '@/components/tracking/BusMap';
 
+interface MonthlySchedule {
+    id: string;
+    location_name: string;
+    scheduled_date: string;
+    address?: string;
+    status?: string;
+    is_active: boolean;
+}
+
 export function LiveBusTrackingPage() {
     const [trips, setTrips] = useState<Trip[]>([]);
     const [monthlyStats, setMonthlyStats] = useState<TripSummary | null>(null);
@@ -28,7 +37,74 @@ export function LiveBusTrackingPage() {
         start: new Date().toISOString().split('T')[0],
         end: new Date().toISOString().split('T')[0]
     });
-    const [upcomingCamps, setUpcomingCamps] = useState<any[]>([]);
+    const [upcomingCamps, setUpcomingCamps] = useState<MonthlySchedule[]>([]);
+
+    const getFilteredTrips = useCallback(() => {
+        const now = new Date();
+        return trips.filter(trip => {
+            const tripDate = new Date(trip.date);
+            if (timeframe === 'daily') {
+                return tripDate.toDateString() === now.toDateString();
+            }
+            if (timeframe === 'weekly') {
+                const weekAgo = new Date();
+                weekAgo.setDate(now.getDate() - 7);
+                return tripDate >= weekAgo;
+            }
+            if (timeframe === 'monthly') {
+                return tripDate.getMonth() === now.getMonth() && tripDate.getFullYear() === now.getFullYear();
+            }
+            if (timeframe === 'custom') {
+                const start = new Date(customDateRange.start);
+                const end = new Date(customDateRange.end);
+                // Set end time to end of day to include trips on that day
+                end.setHours(23, 59, 59, 999);
+                return tripDate >= start && tripDate <= end;
+            }
+            return true; // 'all'
+        });
+    }, [trips, timeframe, customDateRange]);
+
+    const calculateStats = useCallback(() => {
+        const filtered = getFilteredTrips();
+
+        if (filtered.length === 0) {
+            setMonthlyStats({
+                totalDistance: 0,
+                totalTrips: 0,
+                operatingDays: 0,
+                averageDistance: 0,
+                totalBeneficiaries: 0,
+                totalFuelCost: 0,
+                averageFuelEfficiency: 0,
+                locationsCovered: 0,
+            });
+            return;
+        }
+
+        const totalDistance = filtered.reduce((sum, trip) => sum + trip.finalDistance, 0);
+        const totalBeneficiaries = filtered.reduce((sum, trip) => sum + trip.beneficiariesServed, 0);
+        const totalFuelCost = filtered.reduce((sum, trip) => sum + (trip.fuelCost || 0), 0);
+
+        const tripsWithFuel = filtered.filter(t => t.fuelEfficiency);
+        const averageFuelEfficiency = tripsWithFuel.length > 0
+            ? tripsWithFuel.reduce((sum, t) => sum + (t.fuelEfficiency || 0), 0) / tripsWithFuel.length
+            : 0;
+
+        const uniqueDates = new Set(filtered.map(t => t.date));
+        const uniqueLocations = new Set(filtered.map(t => t.location));
+
+        setMonthlyStats({
+            totalDistance: Math.round(totalDistance),
+            totalTrips: filtered.length,
+            operatingDays: uniqueDates.size,
+            averageDistance: Math.round(totalDistance / filtered.length),
+            totalBeneficiaries,
+            totalFuelCost: Math.round(totalFuelCost),
+            averageFuelEfficiency: Number(averageFuelEfficiency.toFixed(2)),
+            locationsCovered: uniqueLocations.size,
+        });
+    }, [getFilteredTrips]);
 
     useEffect(() => {
         loadTrips();
@@ -37,7 +113,7 @@ export function LiveBusTrackingPage() {
 
     useEffect(() => {
         calculateStats();
-    }, [timeframe, trips, customDateRange]);
+    }, [calculateStats]);
 
     const loadTrips = async () => {
         try {
@@ -48,7 +124,7 @@ export function LiveBusTrackingPage() {
 
             if (error) throw error;
 
-            const mappedTrips: Trip[] = data.map((t: any) => ({
+            const mappedTrips: Trip[] = data.map((t) => ({
                 id: t.id,
                 date: t.date,
                 busNumber: t.bus_number,
@@ -97,72 +173,6 @@ export function LiveBusTrackingPage() {
         }
     };
 
-    const getFilteredTrips = () => {
-        const now = new Date();
-        return trips.filter(trip => {
-            const tripDate = new Date(trip.date);
-            if (timeframe === 'daily') {
-                return tripDate.toDateString() === now.toDateString();
-            }
-            if (timeframe === 'weekly') {
-                const weekAgo = new Date();
-                weekAgo.setDate(now.getDate() - 7);
-                return tripDate >= weekAgo;
-            }
-            if (timeframe === 'monthly') {
-                return tripDate.getMonth() === now.getMonth() && tripDate.getFullYear() === now.getFullYear();
-            }
-            if (timeframe === 'custom') {
-                const start = new Date(customDateRange.start);
-                const end = new Date(customDateRange.end);
-                // Set end time to end of day to include trips on that day
-                end.setHours(23, 59, 59, 999);
-                return tripDate >= start && tripDate <= end;
-            }
-            return true; // 'all'
-        });
-    };
-
-    const calculateStats = () => {
-        const filtered = getFilteredTrips();
-
-        if (filtered.length === 0) {
-            setMonthlyStats({
-                totalDistance: 0,
-                totalTrips: 0,
-                operatingDays: 0,
-                averageDistance: 0,
-                totalBeneficiaries: 0,
-                totalFuelCost: 0,
-                averageFuelEfficiency: 0,
-                locationsCovered: 0,
-            });
-            return;
-        }
-
-        const totalDistance = filtered.reduce((sum, trip) => sum + trip.finalDistance, 0);
-        const totalBeneficiaries = filtered.reduce((sum, trip) => sum + trip.beneficiariesServed, 0);
-        const totalFuelCost = filtered.reduce((sum, trip) => sum + (trip.fuelCost || 0), 0);
-
-        const tripsWithFuel = filtered.filter(t => t.fuelEfficiency);
-        const averageFuelEfficiency = tripsWithFuel.length > 0
-            ? tripsWithFuel.reduce((sum, t) => sum + (t.fuelEfficiency || 0), 0) / tripsWithFuel.length
-            : 0;
-
-        const uniqueDates = new Set(filtered.map(t => t.date));
-        const uniqueLocations = new Set(filtered.map(t => t.location));
-
-        setMonthlyStats({
-            totalDistance: Math.round(totalDistance),
-            totalTrips: filtered.length,
-            operatingDays: uniqueDates.size,
-            averageDistance: Math.round(totalDistance / filtered.length),
-            totalBeneficiaries,
-            totalFuelCost: Math.round(totalFuelCost),
-            averageFuelEfficiency: Number(averageFuelEfficiency.toFixed(2)),
-            locationsCovered: uniqueLocations.size,
-        });
-    };
 
     // Get location visit breakdown based on filtered trips
     const getLocationStats = () => {

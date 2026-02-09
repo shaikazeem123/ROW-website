@@ -29,7 +29,7 @@ export function TripHistoryPage() {
 
             if (error) throw error;
 
-            const mappedTrips: Trip[] = data.map((t: any) => ({
+            const mappedTrips: Trip[] = data.map((t) => ({
                 id: t.id,
                 date: t.date,
                 busNumber: t.bus_number,

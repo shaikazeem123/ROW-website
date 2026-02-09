@@ -3,7 +3,7 @@ import type { Trip } from '@/types/trip';
 /**
  * Converts an array of objects to CSV string
  */
-export function convertToCSV(data: any[], headers: { key: string; label: string }[]): string {
+export function convertToCSV(data: Record<string, unknown>[], headers: { key: string; label: string }[]): string {
     const headerRow = headers.map(h => `"${h.label}"`).join(',');
     const rows = data.map(item => {
         return headers.map(h => {

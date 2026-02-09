@@ -46,8 +46,9 @@ export function UpdatePasswordPage() {
 
             alert("Password updated successfully! You will now be redirected to the dashboard.");
             navigate('/dashboard');
-        } catch (err: any) {
-            setError(err.message || "Failed to update password");
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Failed to update password";
+            setError(message);
         } finally {
             setLoading(false);
         }

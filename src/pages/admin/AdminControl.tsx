@@ -2,11 +2,22 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { type UserRole, type UserProfile } from '@/types/rbac';
 import { Shield, Users, Activity, Lock, Search, Check, X, RefreshCw, Key, FileUp } from 'lucide-react';
 import { ScheduleUpload } from '@/components/admin/ScheduleUpload';
 import { ScheduleHistory } from '@/components/admin/ScheduleHistory';
+
+interface AuditLog {
+    id: string;
+    created_at: string;
+    action: string;
+    details: Record<string, unknown>;
+    user_id: string;
+    profiles?: {
+        full_name: string;
+    };
+}
 
 export function AdminControlPage() {
     const { role, user } = useAuth();
@@ -14,7 +25,7 @@ export function AdminControlPage() {
     const [users, setUsers] = useState<UserProfile[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [logs, setLogs] = useState<any[]>([]);
+    const [logs, setLogs] = useState<AuditLog[]>([]);
 
     useEffect(() => {
         if (role === 'Admin') fetchUsers();
@@ -68,7 +79,8 @@ export function AdminControlPage() {
             setUsers(users.map(u => u.id === userId ? { ...u, role: newRole as UserRole } : u));
             logAction('ROLE_CHANGE', { target_user: userId, new_role: newRole });
             alert('Role updated successfully.');
-        } catch (err: any) {
+        } catch (err) {
+            console.error('Error updating role:', err);
             alert('Failed to update role. Ensure you have admin privileges and policies are set.');
         }
     };
@@ -83,8 +95,9 @@ export function AdminControlPage() {
             if (error) throw error;
             logAction('PASSWORD_RESET', { target_email: email });
             alert(`Password reset link sent to ${email}.`);
-        } catch (err: any) {
-            alert('Error: ' + err.message);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Unknown error';
+            alert('Error: ' + message);
         }
     };
 
@@ -103,7 +116,7 @@ export function AdminControlPage() {
             if (error) throw error;
             setUsers(users.map(u => u.id === userId ? { ...u, is_active: !isActive } : u));
             logAction('STATUS_CHANGE', { target_user: userId, new_status: !isActive });
-        } catch (err: any) {
+        } catch {
             alert('Failed to update status. Database columns might be missing.');
         }
     };
@@ -314,7 +327,7 @@ export function AdminControlPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
-                                    {logs.map((log) => (
+                                    {logs.map((log: AuditLog) => (
                                         <tr key={log.id}>
                                             <td className="p-3 whitespace-nowrap">{new Date(log.created_at).toLocaleString()}</td>
                                             <td className="p-3">{log.profiles?.full_name || 'Unknown'}</td>

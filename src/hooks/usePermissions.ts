@@ -1,4 +1,4 @@
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from './useAuth';
 import { ROLE_PERMISSIONS } from '@/types/rbac';
 
 export function usePermissions() {

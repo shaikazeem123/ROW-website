@@ -1,7 +1,7 @@
 /**
  * Utility to export beneficiaries data to CSV (compatible with Excel)
  */
-export const exportBeneficiariesToCSV = (data: any[]) => {
+export const exportBeneficiariesToCSV = (data: Record<string, unknown>[]) => {
     if (!data || data.length === 0) return;
 
     // Define the columns based on user requirement image

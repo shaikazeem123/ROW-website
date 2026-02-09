@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { Card } from '@/components/common/Card';
@@ -96,8 +96,9 @@ export function LoginPage() {
           setIsLoading(false);
         }
       }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred during authentication');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'An error occurred during authentication';
+      setError(message);
       setIsLoading(false);
     }
   };
