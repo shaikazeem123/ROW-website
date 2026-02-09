@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { exportBeneficiariesToCSV } from '@/utils/beneficiaryExport';
 import { db } from '@/lib/db';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export function BeneficiaryListPage() {
     const isOnline = useOnlineStatus();
@@ -15,6 +16,7 @@ export function BeneficiaryListPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isDeleting, setIsDeleting] = useState(false);
+    const { canDeleteRecords } = usePermissions();
 
     useEffect(() => {
         fetchBeneficiaries();
@@ -142,7 +144,7 @@ export function BeneficiaryListPage() {
                     <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold border ${isOnline ? 'bg-green-50 text-green-700 border-green-100' : 'bg-orange-50 text-orange-700 border-orange-100'}`}>
                         {isOnline ? <><Wifi size={14} /> Online</> : <><WifiOff size={14} /> Offline</>}
                     </div>
-                    {selectedIds.length > 0 && (
+                    {selectedIds.length > 0 && canDeleteRecords && (
                         <Button
                             variant="secondary"
                             onClick={handleBulkDelete}
@@ -264,17 +266,19 @@ export function BeneficiaryListPage() {
 
                                             {/* Action Buttons */}
                                             <div className="mt-4 pt-4 border-t border-gray-100 flex justify-end">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        handleDelete(b.id || b.offline_token, b.name);
-                                                    }}
-                                                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1 text-xs font-bold"
-                                                    disabled={isDeleting}
-                                                >
-                                                    <Trash2 size={14} /> Delete
-                                                </button>
+                                                {canDeleteRecords && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            handleDelete(b.id || b.offline_token, b.name);
+                                                        }}
+                                                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1 text-xs font-bold"
+                                                        disabled={isDeleting}
+                                                    >
+                                                        <Trash2 size={14} /> Delete
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

@@ -23,7 +23,7 @@ import { BusMap } from '@/components/tracking/BusMap';
 export function LiveBusTrackingPage() {
     const [trips, setTrips] = useState<Trip[]>([]);
     const [monthlyStats, setMonthlyStats] = useState<TripSummary | null>(null);
-    const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'monthly' | 'custom' | 'all'>('monthly');
+    const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'monthly' | 'custom' | 'all'>('all');
     const [customDateRange, setCustomDateRange] = useState({
         start: new Date().toISOString().split('T')[0],
         end: new Date().toISOString().split('T')[0]
@@ -212,8 +212,8 @@ export function LiveBusTrackingPage() {
                                     key={t}
                                     onClick={() => setTimeframe(t)}
                                     className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${timeframe === t
-                                            ? 'bg-white text-primary shadow-sm'
-                                            : 'text-text-muted hover:text-text-main'
+                                        ? 'bg-white text-primary shadow-sm'
+                                        : 'text-text-muted hover:text-text-main'
                                         }`}
                                 >
                                     {t === 'daily' ? 'Day' : t.charAt(0).toUpperCase() + t.slice(1)}

@@ -8,6 +8,7 @@ export function usePermissions() {
     return {
         role,
         permissions,
+        ...permissions, // Spread all permissions so they can be destructured directly
         can: (action: keyof typeof permissions) => permissions[action],
         hasPageAccess: (page: string) => permissions.accessiblePages.includes(page)
     };

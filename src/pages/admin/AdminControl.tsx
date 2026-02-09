@@ -4,7 +4,7 @@ import { Button } from '@/components/common/Button';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { type UserRole, type UserProfile } from '@/types/rbac';
-import { Shield, Users, Activity, Lock, Search, Check, X, RefreshCw } from 'lucide-react';
+import { Shield, Users, Activity, Lock, Search, Check, X, RefreshCw, Key } from 'lucide-react';
 
 export function AdminControlPage() {
     const { role, user } = useAuth();
@@ -68,6 +68,21 @@ export function AdminControlPage() {
             alert('Role updated successfully.');
         } catch (err: any) {
             alert('Failed to update role. Ensure you have admin privileges and policies are set.');
+        }
+    };
+
+    const handleResetPassword = async (email: string) => {
+        if (!email) return;
+        if (!confirm(`Send password reset email to ${email}?`)) return;
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/update-password`,
+            });
+            if (error) throw error;
+            logAction('PASSWORD_RESET', { target_email: email });
+            alert(`Password reset link sent to ${email}.`);
+        } catch (err: any) {
+            alert('Error: ' + err.message);
         }
     };
 
@@ -191,13 +206,23 @@ export function AdminControlPage() {
                                             </span>
                                         </td>
                                         <td className="p-3 text-right">
-                                            <Button
-                                                variant="outline"
-                                                onClick={() => toggleUserStatus(u.id, u.is_active !== false)}
-                                                className={`text-xs py-1 px-3 ${u.is_active !== false ? "text-red-600 border-red-200 hover:bg-red-50" : "text-green-600 border-green-200 hover:bg-green-50"}`}
-                                            >
-                                                {u.is_active !== false ? 'Disable' : 'Enable'}
-                                            </Button>
+                                            <div className="flex items-center justify-end gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={() => handleResetPassword(u.email)}
+                                                    className="text-xs py-1 px-3 text-blue-600 border-blue-200 hover:bg-blue-50"
+                                                    title="Send Password Reset Email"
+                                                >
+                                                    <Key size={14} className="mr-1" /> Reset
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={() => toggleUserStatus(u.id, u.is_active !== false)}
+                                                    className={`text-xs py-1 px-3 ${u.is_active !== false ? "text-red-600 border-red-200 hover:bg-red-50" : "text-green-600 border-green-200 hover:bg-green-50"}`}
+                                                >
+                                                    {u.is_active !== false ? 'Disable' : 'Enable'}
+                                                </Button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppLayout } from '../components/layout/AppLayout';
 import { LoginPage } from '../pages/auth/Login';
+import { UpdatePasswordPage } from '../pages/auth/UpdatePassword';
 import { DashboardPage } from '../pages/dashboard/Dashboard';
 import { CalendarPage } from '../pages/calendar/Calendar';
 import { LiveBusTrackingPage } from '../pages/tracking/LiveBusTracking';
@@ -23,6 +24,10 @@ export const router = createBrowserRouter([
     {
         path: '/login',
         element: <LoginPage />,
+    },
+    {
+        path: '/update-password',
+        element: <UpdatePasswordPage />,
     },
     {
         path: '/',
