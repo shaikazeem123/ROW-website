@@ -10,7 +10,7 @@ import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { usePermissions } from '@/hooks/usePermissions';
 import type { OfflineBeneficiary } from '@/lib/db';
 
-interface BeneficiaryItem extends Partial<OfflineBeneficiary> {
+interface BeneficiaryItem extends Partial<OfflineBeneficiary>, Record<string, unknown> {
     id?: string;
     isOffline?: boolean;
 }

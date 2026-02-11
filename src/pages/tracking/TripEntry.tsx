@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Bus, Save, Calculator, MapPin, Clock, Users, Fuel, Edit2, CheckCircle } from 'lucide-react';
@@ -151,14 +151,36 @@ export function TripEntryPage() {
         };
 
         fetchTodayScheduledLocation();
-    }, [isEditMode, formData.date]);
+    }, [isEditMode, formData.date, formData.location]);
+
+    // Wrap calculateDistanceFromLocation in useCallback
+    const calculateDistanceFromLocation = useCallback(async () => {
+        const location = getLocationByName(formData.location);
+        if (!location) return;
+
+        setIsCalculating(true);
+        try {
+            const result = await calculateDistance(BASE_LOCATION, location);
+            if (result.success) {
+                setCalculatedData(prev => ({
+                    ...prev,
+                    distance: result.distance,
+                    duration: result.duration / 60 // Convert minutes to hours
+                }));
+            }
+        } catch (error) {
+            console.error('Distance calculation error:', error);
+        } finally {
+            setIsCalculating(false);
+        }
+    }, [formData.location]);
 
     // Auto-calculate distance when location is selected
     useEffect(() => {
         if (formData.location && !isEditMode) {
             calculateDistanceFromLocation();
         }
-    }, [formData.location, isEditMode]);
+    }, [formData.location, isEditMode, calculateDistanceFromLocation]);
 
     // Auto-calculate from odometer when values change
     useEffect(() => {
@@ -190,26 +212,7 @@ export function TripEntryPage() {
         }
     }, [calculatedData.distance, formData.fuelLiters]);
 
-    const calculateDistanceFromLocation = async () => {
-        const location = getLocationByName(formData.location);
-        if (!location) return;
 
-        setIsCalculating(true);
-        try {
-            const result = await calculateDistance(BASE_LOCATION, location);
-            if (result.success) {
-                setCalculatedData(prev => ({
-                    ...prev,
-                    distance: result.distance,
-                    duration: result.duration / 60 // Convert minutes to hours
-                }));
-            }
-        } catch (error) {
-            console.error('Distance calculation error:', error);
-        } finally {
-            setIsCalculating(false);
-        }
-    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
