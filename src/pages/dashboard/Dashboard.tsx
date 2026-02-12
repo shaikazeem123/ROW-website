@@ -11,9 +11,9 @@ import {
 } from 'lucide-react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
-import { screeningSchedule, getEventsByMonth } from '@/data/screeningSchedule';
+import { getEventsByMonth } from '@/data/screeningSchedule';
 import { Link } from 'react-router-dom';
-import type { ScreeningEvent } from '@/types/screening';
+
 
 interface MappedCamp {
     location: string;
@@ -32,6 +32,8 @@ export function DashboardPage() {
         campsConducted: 0,
         pendingServices: 0
     });
+
+    const [upcomingCamps, setUpcomingCamps] = useState<MappedCamp[]>([]);
 
     useEffect(() => {
         const fetchDashboardData = async () => {
@@ -62,6 +64,28 @@ export function DashboardPage() {
                         pendingServices: 0
                     });
                 }
+
+                // 3. Fetch upcoming camps from monthly_schedules
+                const currentDate = new Date();
+                const { data: schedules, error: sError } = await supabase
+                    .from('monthly_schedules')
+                    .select('*')
+                    .eq('is_active', true)
+                    .gte('scheduled_date', currentDate.toISOString().split('T')[0])
+                    .order('scheduled_date', { ascending: true })
+                    .limit(4);
+
+                if (sError) throw sError;
+
+                if (schedules) {
+                    const mappedCamps: MappedCamp[] = schedules.map(camp => ({
+                        location: camp.location_name,
+                        date: new Date(camp.scheduled_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                        type: camp.status === 'completed' ? 'Completed' : 'Screening Camp'
+                    }));
+                    setUpcomingCamps(mappedCamps);
+                }
+
             } catch (err) {
                 console.error('Error fetching dashboard stats:', err);
             } finally {
@@ -110,16 +134,6 @@ export function DashboardPage() {
             link: '/services/history'
         },
     ];
-
-    const upcomingCamps = screeningSchedule
-        .filter((event: ScreeningEvent) => new Date(event.date) >= new Date())
-        .sort((a: ScreeningEvent, b: ScreeningEvent) => new Date(a.date).getTime() - new Date(b.date).getTime())
-        .slice(0, 3)
-        .map((event: ScreeningEvent) => ({
-            location: event.location,
-            date: new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-            type: event.purpose === 'Follow-up Session' ? 'Follow-up' : 'Screening'
-        }));
 
     // Get current month screening events
     const today = new Date();
@@ -231,9 +245,9 @@ export function DashboardPage() {
                     <Card>
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="font-semibold text-lg text-text-main">Upcoming Camps</h3>
-                            <a href="#" className="text-xs text-primary font-medium hover:underline flex items-center">
+                            <Link to="/tracking#upcoming-camps" className="text-xs text-primary font-medium hover:underline flex items-center">
                                 View All <ArrowUpRight size={12} className="ml-1" />
-                            </a>
+                            </Link>
                         </div>
                         <div className="space-y-4">
                             {upcomingCamps.map((camp: MappedCamp, i: number) => (

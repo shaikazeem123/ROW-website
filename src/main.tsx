@@ -4,10 +4,10 @@ import './index.css'
 import 'leaflet/dist/leaflet.css';
 import App from './App.tsx'
 // PWA disabled temporarily
-// import { registerSW } from 'virtual:pwa-register'
+import { registerSW } from 'virtual:pwa-register'
 
 // Register Service Worker for PWA
-// registerSW({ immediate: true })
+registerSW({ immediate: true })
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
