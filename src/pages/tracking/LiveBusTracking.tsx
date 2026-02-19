@@ -6,7 +6,6 @@ import {
     TrendingUp,
     MapPin,
     Fuel,
-    Users,
     Calendar,
     BarChart3,
     Download
@@ -83,7 +82,6 @@ export function LiveBusTrackingPage() {
         }
 
         const totalDistance = filtered.reduce((sum, trip) => sum + trip.finalDistance, 0);
-        const totalBeneficiaries = filtered.reduce((sum, trip) => sum + trip.beneficiariesServed, 0);
         const totalFuelCost = filtered.reduce((sum, trip) => sum + (trip.fuelCost || 0), 0);
 
         const tripsWithFuel = filtered.filter(t => t.fuelEfficiency);
@@ -99,7 +97,7 @@ export function LiveBusTrackingPage() {
             totalTrips: filtered.length,
             operatingDays: uniqueDates.size,
             averageDistance: Math.round(totalDistance / filtered.length),
-            totalBeneficiaries,
+            totalBeneficiaries: 0,
             totalFuelCost: Math.round(totalFuelCost),
             averageFuelEfficiency: Number(averageFuelEfficiency.toFixed(2)),
             locationsCovered: uniqueLocations.size,
@@ -138,7 +136,7 @@ export function LiveBusTrackingPage() {
                 returnTime: t.return_time,
                 durationHours: t.duration_hours,
                 purpose: t.purpose,
-                beneficiariesServed: t.beneficiaries_served,
+                beneficiariesServed: 0,
                 fuelLiters: t.fuel_liters,
                 fuelCost: t.fuel_cost,
                 fuelEfficiency: t.fuel_efficiency,
@@ -338,20 +336,7 @@ export function LiveBusTrackingPage() {
                     </p>
                 </Card>
 
-                <Card className="p-4 border-l-4 border-l-purple-500">
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <p className="text-sm font-medium text-text-muted mb-1">Beneficiaries</p>
-                            <h3 className="text-2xl font-bold text-text-main">{stats.totalBeneficiaries}</h3>
-                        </div>
-                        <div className="p-2 rounded-lg bg-purple-50">
-                            <Users className="w-5 h-5 text-purple-600" />
-                        </div>
-                    </div>
-                    <p className="text-xs text-text-muted mt-2">
-                        {stats.locationsCovered} locations
-                    </p>
-                </Card>
+
 
                 <Card className="p-4 border-l-4 border-l-orange-500">
                     <div className="flex justify-between items-start">
@@ -463,8 +448,6 @@ export function LiveBusTrackingPage() {
                                     <h4 className="font-medium text-sm text-text-main">{trip.location}</h4>
                                     <div className="flex items-center gap-4 mt-2 text-xs text-text-muted">
                                         <span>{trip.finalDistance} km</span>
-                                        <span>•</span>
-                                        <span>{trip.beneficiariesServed} people</span>
                                     </div>
                                 </div>
                             ))}

@@ -2,17 +2,20 @@ import {
     Users,
     Bus,
     MapPin,
-    Calendar,
     TrendingUp,
-    Activity,
+    Stethoscope,
     ArrowUpRight,
     Bell,
-    ArrowRight
+    ArrowRight,
+    Filter
 } from 'lucide-react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { getEventsByMonth } from '@/data/screeningSchedule';
 import { Link } from 'react-router-dom';
+import { BeneficiaryRegistrationChart } from '@/components/dashboard/BeneficiaryRegistrationChart';
+import { ServiceDashboardChart } from '@/components/dashboard/ServiceDashboardChart';
+import type { TimeFrame, ChartFilter } from '@/types/dashboard';
 
 
 interface MappedCamp {
@@ -30,42 +33,91 @@ export function DashboardPage() {
         totalBeneficiaries: 0,
         activeBuses: 0,
         campsConducted: 0,
-        pendingServices: 0
+        servicesProvided: 0
     });
 
     const [upcomingCamps, setUpcomingCamps] = useState<MappedCamp[]>([]);
+
+    // Global Filter State
+    const [timeframe, setTimeframe] = useState<TimeFrame>('all');
+    const [globalFilter, setGlobalFilter] = useState<ChartFilter>({
+        startDate: '',
+        endDate: '',
+    });
+
+    // Helper to set dates based on timeframe
+    const handleTimeframeChange = (t: TimeFrame) => {
+        setTimeframe(t);
+        const today = new Date();
+        let start = '';
+        const end = today.toISOString().split('T')[0];
+
+        if (t === 'daily') {
+            start = end;
+        } else if (t === 'monthly') {
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            start = firstDay.toISOString().split('T')[0];
+        } else if (t === 'yearly') {
+            const firstDayYear = new Date(today.getFullYear(), 0, 1);
+            start = firstDayYear.toISOString().split('T')[0];
+        } else {
+            // 'all'
+            start = '';
+            setGlobalFilter({ startDate: '', endDate: '' });
+            return;
+        }
+        setGlobalFilter({ ...globalFilter, startDate: start, endDate: end });
+    };
 
     useEffect(() => {
         const fetchDashboardData = async () => {
             setIsLoading(true);
             try {
-                // 1. Fetch total registered beneficiaries
-                const { count: beneficiaryCount, error: bError } = await supabase
+                // 1. Fetch registered beneficiaries in period
+                let bQuery = supabase
                     .from('beneficiaries')
                     .select('*', { count: 'exact', head: true });
 
+                if (globalFilter.startDate) bQuery = bQuery.gte('date_of_registration', globalFilter.startDate);
+                if (globalFilter.endDate) bQuery = bQuery.lte('date_of_registration', globalFilter.endDate);
+
+                const { count: beneficiaryCount, error: bError } = await bQuery;
                 if (bError) throw bError;
 
-                // 2. Fetch stats from 'trips' table
-                const { data: trips, error: tError } = await supabase
+                // 2. Fetch stats from 'trips' table in period
+                let tQuery = supabase
                     .from('trips')
                     .select('bus_number');
 
+                if (globalFilter.startDate) tQuery = tQuery.gte('date', globalFilter.startDate);
+                if (globalFilter.endDate) tQuery = tQuery.lte('date', globalFilter.endDate);
+
+                const { data: trips, error: tError } = await tQuery;
                 if (tError) throw tError;
 
-                if (trips) {
-                    const uniqueBuses = new Set(trips.map(t => t.bus_number)).size;
-                    const campsConducted = trips.length;
+                // 3. Fetch total services provided in period
+                let sQuery = supabase
+                    .from('services')
+                    .select('*', { count: 'exact', head: true });
 
-                    setDynamicStats({
-                        totalBeneficiaries: beneficiaryCount || 0,
-                        activeBuses: uniqueBuses,
-                        campsConducted,
-                        pendingServices: 0
-                    });
-                }
+                if (globalFilter.startDate) sQuery = sQuery.gte('service_date', globalFilter.startDate);
+                if (globalFilter.endDate) sQuery = sQuery.lte('service_date', globalFilter.endDate);
 
-                // 3. Fetch upcoming camps from monthly_schedules
+                const { count: servicesCount, error: srvError } = await sQuery;
+                if (srvError) throw srvError;
+
+
+                const uniqueBuses = trips ? new Set(trips.map(t => t.bus_number)).size : 0;
+                const campsConducted = trips ? trips.length : 0;
+
+                setDynamicStats({
+                    totalBeneficiaries: beneficiaryCount || 0,
+                    activeBuses: uniqueBuses,
+                    campsConducted,
+                    servicesProvided: servicesCount || 0
+                });
+
+                // 4. Fetch upcoming camps from monthly_schedules (This usually stays independent of history filter)
                 const currentDate = new Date();
                 const { data: schedules, error: sError } = await supabase
                     .from('monthly_schedules')
@@ -94,7 +146,7 @@ export function DashboardPage() {
         };
 
         fetchDashboardData();
-    }, []);
+    }, [globalFilter]);
 
     const stats = [
         {
@@ -125,10 +177,10 @@ export function DashboardPage() {
             link: '/tracking/history'
         },
         {
-            label: 'Pending Services',
-            value: dynamicStats.pendingServices.toString(),
-            icon: Activity,
-            change: 'To do',
+            label: 'Services Provided',
+            value: dynamicStats.servicesProvided.toLocaleString(),
+            icon: Stethoscope,
+            change: 'Lifetime',
             color: 'text-orange-600',
             bg: 'bg-orange-50',
             link: '/services/history'
@@ -143,16 +195,64 @@ export function DashboardPage() {
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
-            {/* Header Section */}
+            {/* Global Filters Section */}
+            <Card className="p-4 bg-white border-b border-gray-100 shadow-sm sticky top-0 z-10">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-2">
+                        <Filter size={18} className="text-gray-400" />
+                        <span className="text-sm font-bold text-gray-700 uppercase tracking-wider">Date Filters</span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-4">
+                        {/* Timeframe Presets */}
+                        <div className="flex bg-gray-100 p-1 rounded-lg">
+                            {(['daily', 'monthly', 'yearly', 'all'] as const).map((t) => (
+                                <button
+                                    key={t}
+                                    onClick={() => handleTimeframeChange(t)}
+                                    className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${timeframe === t
+                                        ? 'bg-white text-primary shadow-sm'
+                                        : 'text-gray-500 hover:text-gray-900'
+                                        }`}
+                                >
+                                    {t === 'daily' ? 'Day Wise' : t === 'monthly' ? 'Month Wise' : t === 'yearly' ? 'Year Wise' : 'Whole Data'}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Custom Date Range Picker */}
+                        <div className="flex items-center gap-3 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
+                            <div className="flex flex-col">
+                                <span className="text-[9px] font-bold text-gray-400 uppercase">From</span>
+                                <input
+                                    type="date"
+                                    value={globalFilter.startDate}
+                                    onChange={(e) => setGlobalFilter({ ...globalFilter, startDate: e.target.value })}
+                                    className="bg-transparent border-none p-0 text-xs font-semibold focus:ring-0"
+                                />
+                            </div>
+                            <span className="text-gray-300">|</span>
+                            <div className="flex flex-col">
+                                <span className="text-[9px] font-bold text-gray-400 uppercase">To</span>
+                                <input
+                                    type="date"
+                                    value={globalFilter.endDate}
+                                    onChange={(e) => setGlobalFilter({ ...globalFilter, endDate: e.target.value })}
+                                    className="bg-transparent border-none p-0 text-xs font-semibold focus:ring-0"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </Card>
+
+            {/* Header Section (Removed extra select date button as we have global filter) */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-text-main">Dashboard Overview</h1>
                     <p className="text-text-muted">Welcome back, Admin. Here's what's happening today.</p>
                 </div>
                 <div className="flex gap-3">
-                    <Button variant="outline" className="flex items-center gap-2">
-                        <Calendar size={18} /> Select Date
-                    </Button>
                     <Button className="flex items-center gap-2">
                         Download Report
                     </Button>
@@ -216,28 +316,13 @@ export function DashboardPage() {
                 ))}
             </div>
 
+
             {/* Main Content Areas */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Chart Area Placeholder */}
+                {/* Charts Area */}
                 <div className="lg:col-span-2 space-y-6">
-                    <Card className="min-h-[300px] flex flex-col">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="font-semibold text-lg text-text-main flex items-center gap-2">
-                                <Activity className="text-primary" size={20} />
-                                Service Impact Analytics
-                            </h3>
-                            <select className="text-sm border-gray-200 rounded-lg p-1 bg-gray-50 text-text-muted">
-                                <option>Last 30 Days</option>
-                                <option>Last 6 Months</option>
-                            </select>
-                        </div>
-                        <div className="flex-1 flex items-center justify-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                            <div className="text-center">
-                                <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-3 animate-pulse"></div>
-                                <p className="text-text-muted">Impact Chart Visualization Loading...</p>
-                            </div>
-                        </div>
-                    </Card>
+                    <BeneficiaryRegistrationChart timeframe={timeframe} filter={globalFilter} />
+                    <ServiceDashboardChart timeframe={timeframe} filter={globalFilter} />
                 </div>
 
                 {/* Side Panel: Scheduled Camps */}

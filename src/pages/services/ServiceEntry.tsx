@@ -5,12 +5,14 @@ import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Stethoscope, Calendar, MapPin, ArrowLeft, Save, AlertCircle } from 'lucide-react';
+import { BeneficiarySelect } from '@/components/beneficiary/BeneficiarySelect';
 
 export function ServiceEntryPage() {
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
-    const beneficiaryId = searchParams.get('beneficiary_id');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const urlBeneficiaryId = searchParams.get('beneficiary_id');
 
+    const [selectedBeneficiaryId, setSelectedBeneficiaryId] = useState<string | undefined>(urlBeneficiaryId || undefined);
     const [beneficiaryName, setBeneficiaryName] = useState<string>('');
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -25,13 +27,13 @@ export function ServiceEntryPage() {
         outcome: ''
     });
 
-    const fetchBeneficiaryName = useCallback(async () => {
+    const fetchBeneficiaryName = useCallback(async (id: string) => {
         setIsLoading(true);
         try {
             const { data, error } = await supabase
                 .from('beneficiaries')
                 .select('name')
-                .eq('id', beneficiaryId)
+                .eq('id', id)
                 .single();
             if (error) throw error;
             setBeneficiaryName(data.name);
@@ -40,24 +42,31 @@ export function ServiceEntryPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [beneficiaryId]);
+    }, []);
 
     useEffect(() => {
-        if (beneficiaryId) {
-            fetchBeneficiaryName();
+        if (selectedBeneficiaryId) {
+            fetchBeneficiaryName(selectedBeneficiaryId);
         }
-    }, [beneficiaryId, fetchBeneficiaryName]);
+    }, [selectedBeneficiaryId, fetchBeneficiaryName]);
+
+    const handleBeneficiarySelect = (b: { id: string, name: string }) => {
+        setSelectedBeneficiaryId(b.id);
+        setBeneficiaryName(b.name);
+        // Update URL to keep it in sync (optional but good for refreshes)
+        setSearchParams({ beneficiary_id: b.id }, { replace: true });
+    };
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        if (!beneficiaryId) return;
+        if (!selectedBeneficiaryId) return;
 
         setIsSaving(true);
         try {
             const { error } = await supabase
                 .from('services')
                 .insert([{
-                    beneficiary_id: beneficiaryId,
+                    beneficiary_id: selectedBeneficiaryId,
                     service_date: formData.serviceDate,
                     service_type: formData.serviceType,
                     provider_name: formData.providerName,
@@ -68,7 +77,7 @@ export function ServiceEntryPage() {
                 }]);
 
             if (error) throw error;
-            navigate(`/beneficiary/${beneficiaryId}`);
+            navigate(`/beneficiary/${selectedBeneficiaryId}`);
         } catch (error) {
             console.error('Error saving service:', error);
             const message = error instanceof Error ? error.message : 'Failed to save service';
@@ -78,7 +87,7 @@ export function ServiceEntryPage() {
         }
     };
 
-    if (isLoading) {
+    if (isLoading && selectedBeneficiaryId && !beneficiaryName) {
         return (
             <div className="flex justify-center items-center min-h-[400px]">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -87,7 +96,7 @@ export function ServiceEntryPage() {
     }
 
     return (
-        <div className="max-w-3xl mx-auto space-y-6">
+        <div className="max-w-3xl mx-auto space-y-6 pb-20">
             {/* Header */}
             <div className="flex items-center gap-4">
                 <button
@@ -98,14 +107,23 @@ export function ServiceEntryPage() {
                 </button>
                 <div>
                     <h1 className="text-2xl font-bold text-text-main">New Service Entry</h1>
-                    <p className="text-text-muted">Recording service for <span className="text-primary font-bold">{beneficiaryName || 'Beneficiary'}</span></p>
+                    <p className="text-text-muted">Recording service for <span className="text-primary font-bold">{beneficiaryName || 'Selected Beneficiary'}</span></p>
                 </div>
             </div>
 
-            {!beneficiaryId && (
-                <div className="p-4 bg-red-50 text-red-700 rounded-lg flex items-center gap-3">
+            {/* Selection Dropdown */}
+            <Card className="p-6 border-l-4 border-l-primary shadow-md">
+                <BeneficiarySelect
+                    onSelect={handleBeneficiarySelect}
+                    selectedId={selectedBeneficiaryId}
+                    placeholder="Select Beneficiary (File No / Name)"
+                />
+            </Card>
+
+            {!selectedBeneficiaryId && (
+                <div className="p-4 bg-amber-50 text-amber-700 border border-amber-100 rounded-xl flex items-center gap-3 animate-pulse">
                     <AlertCircle size={20} />
-                    <p>No beneficiary selected. Please select a beneficiary from the list first.</p>
+                    <p className="text-sm font-medium">Please select a beneficiary above to enable the service entry form.</p>
                 </div>
             )}
 
@@ -214,7 +232,7 @@ export function ServiceEntryPage() {
                         <Button
                             type="submit"
                             className="flex items-center gap-2"
-                            disabled={isSaving || !beneficiaryId}
+                            disabled={isSaving || !selectedBeneficiaryId}
                         >
                             <Save size={18} /> {isSaving ? 'Saving...' : 'Save Service Record'}
                         </Button>

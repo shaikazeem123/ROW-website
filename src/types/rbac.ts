@@ -7,6 +7,7 @@ export interface PermissionRules {
     canExportData: boolean;
     canDeleteRecords: boolean;
     canApproveRequests: boolean;
+    canImportFileNumbers: boolean;
     accessiblePages: string[];
 }
 
@@ -18,6 +19,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, PermissionRules> = {
         canExportData: true,
         canDeleteRecords: true,
         canApproveRequests: true,
+        canImportFileNumbers: true,
         accessiblePages: ['dashboard', 'beneficiary', 'services', 'reports', 'settings', 'admin']
     },
     Manager: {
@@ -27,6 +29,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, PermissionRules> = {
         canExportData: true,
         canDeleteRecords: false, // Managers typically can't delete hard records in this specific requirement
         canApproveRequests: true,
+        canImportFileNumbers: true,
         accessiblePages: ['dashboard', 'beneficiary', 'services', 'reports', 'settings']
     },
     Staff: {
@@ -36,6 +39,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, PermissionRules> = {
         canExportData: false,
         canDeleteRecords: false,
         canApproveRequests: false,
+        canImportFileNumbers: false,
         // Staff has limited dashboard access in prompt requirements? 
         // "Staff Access only to: Beneficiary pages, Service pages"
         // I will follow that strict rule.

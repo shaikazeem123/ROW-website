@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Bus, Save, Calculator, MapPin, Clock, Users, Fuel, Edit2, CheckCircle } from 'lucide-react';
+import { Bus, Save, Calculator, MapPin, Clock, Fuel, Edit2, CheckCircle } from 'lucide-react';
 import { Card } from '@/components/common/Card';
 import { Input } from '@/components/common/Input';
 import { Select } from '@/components/common/Select';
@@ -28,7 +28,6 @@ export function TripEntryPage() {
         departureTime: '09:00',
         returnTime: '17:00',
         purpose: 'Screening',
-        beneficiariesServed: '',
         fuelLiters: '',
         fuelCost: '',
         notes: '',
@@ -71,7 +70,6 @@ export function TripEntryPage() {
                         departureTime: tripToEdit.departure_time,
                         returnTime: tripToEdit.return_time,
                         purpose: tripToEdit.purpose,
-                        beneficiariesServed: tripToEdit.beneficiaries_served.toString(),
                         fuelLiters: tripToEdit.fuel_liters?.toString() || '',
                         fuelCost: tripToEdit.fuel_cost?.toString() || '',
                         notes: tripToEdit.notes || '',
@@ -241,7 +239,7 @@ export function TripEntryPage() {
             return_time: formData.returnTime,
             duration_hours: calculatedData.duration,
             purpose: formData.purpose,
-            beneficiaries_served: parseInt(formData.beneficiariesServed) || 0,
+            beneficiaries_served: 0,
             fuel_liters: formData.fuelLiters ? parseFloat(formData.fuelLiters) : null,
             fuel_cost: formData.fuelCost ? parseFloat(formData.fuelCost) : null,
             fuel_efficiency: calculatedData.fuelEfficiency || null,
@@ -456,25 +454,6 @@ export function TripEntryPage() {
                                     </p>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Impact */}
-                    <div>
-                        <h3 className="text-lg font-semibold text-primary mb-4 border-b border-gray-100 pb-2 flex items-center gap-2">
-                            <Users size={20} />
-                            Service Impact
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <Input
-                                label="Beneficiaries Served"
-                                name="beneficiariesServed"
-                                type="number"
-                                value={formData.beneficiariesServed}
-                                onChange={handleChange}
-                                required
-                                placeholder="0"
-                            />
                         </div>
                     </div>
 

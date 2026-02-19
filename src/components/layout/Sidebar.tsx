@@ -19,9 +19,12 @@ interface SidebarContentProps {
     onMobileClose: () => void;
     onToggleCollapse: () => void;
     logout: () => Promise<void>;
+    userInitials: string;
+    userEmail: string;
+    userName: string;
 }
 
-function SidebarContent({ collapsed, mobileOpen, onMobileClose, onToggleCollapse, logout }: SidebarContentProps) {
+function SidebarContent({ collapsed, mobileOpen, onMobileClose, onToggleCollapse, logout, userInitials, userEmail, userName }: SidebarContentProps) {
     return (
         <div className="flex flex-col h-full bg-surface">
             <div className={`h-16 flex items-center border-b border-gray-100 ${collapsed ? 'justify-center' : 'px-6 justify-between'}`}>
@@ -50,12 +53,12 @@ function SidebarContent({ collapsed, mobileOpen, onMobileClose, onToggleCollapse
                     className={`flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer w-full text-left ${collapsed ? 'justify-center' : ''}`}
                 >
                     <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold shrink-0">
-                        AD
+                        {userInitials}
                     </div>
                     {!collapsed && (
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-text-main truncate">Admin</p>
-                            <p className="text-xs text-text-muted truncate">admin@row.org</p>
+                            <p className="text-sm font-medium text-text-main truncate">{userName}</p>
+                            <p className="text-xs text-text-muted truncate">{userEmail}</p>
                         </div>
                     )}
                     {!collapsed && <LogOut size={16} className="text-text-muted hover:text-red-500 ml-auto" />}
@@ -66,7 +69,14 @@ function SidebarContent({ collapsed, mobileOpen, onMobileClose, onToggleCollapse
 }
 
 export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onMobileClose }: SidebarProps) {
-    const { logout } = useAuth();
+    const { logout, user, profile } = useAuth();
+
+    const userName = profile?.full_name || user?.email?.split('@')[0] || 'User';
+    const userEmail = user?.email || '';
+    const userInitials = (profile?.full_name
+        ? profile.full_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+        : (user?.email?.[0] || 'U').toUpperCase()
+    );
 
     // Mobile overlay styles
     const mobileClasses = mobileOpen
@@ -94,6 +104,9 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onMobileClose
                     onMobileClose={onMobileClose}
                     onToggleCollapse={onToggleCollapse}
                     logout={logout}
+                    userInitials={userInitials}
+                    userEmail={userEmail}
+                    userName={userName}
                 />
             </aside>
 
@@ -105,6 +118,9 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onMobileClose
                     onMobileClose={onMobileClose}
                     onToggleCollapse={onToggleCollapse}
                     logout={logout}
+                    userInitials={userInitials}
+                    userEmail={userEmail}
+                    userName={userName}
                 />
             </aside>
         </>

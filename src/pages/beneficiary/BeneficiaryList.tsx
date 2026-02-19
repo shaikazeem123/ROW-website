@@ -4,10 +4,12 @@ import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Plus, User, MapPin, Phone, Search, Download, Trash2, CheckSquare, Square, Wifi, WifiOff, CloudOff, CloudCheck, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { exportBeneficiariesToCSV } from '@/utils/beneficiaryExport';
+import { exportBeneficiariesToExcel } from '@/utils/beneficiaryExport';
 import { db } from '@/lib/db';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { usePermissions } from '@/hooks/usePermissions';
+import { ImportFileNumbersModal } from '@/components/beneficiary/ImportFileNumbersModal';
+import { FileUp } from 'lucide-react';
 import type { OfflineBeneficiary } from '@/lib/db';
 
 interface BeneficiaryItem extends Partial<OfflineBeneficiary>, Record<string, unknown> {
@@ -22,7 +24,8 @@ export function BeneficiaryListPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isDeleting, setIsDeleting] = useState(false);
-    const { canDeleteRecords } = usePermissions();
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const { canDeleteRecords, canImportFileNumbers } = usePermissions();
 
     const fetchBeneficiaries = useCallback(async () => {
         setIsLoading(true);
@@ -136,12 +139,13 @@ export function BeneficiaryListPage() {
     };
 
     const handleExport = () => {
-        exportBeneficiariesToCSV(filteredBeneficiaries);
+        exportBeneficiariesToExcel(filteredBeneficiaries);
     };
 
     const filteredBeneficiaries = beneficiaries.filter(b =>
         (b.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        b.mobile_no?.includes(searchTerm)
+        b.mobile_no?.includes(searchTerm) ||
+        (b.file_number || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
@@ -171,8 +175,17 @@ export function BeneficiaryListPage() {
                         className="flex items-center gap-2"
                         disabled={isLoading || filteredBeneficiaries.length === 0}
                     >
-                        <Download size={18} /> Export CSV
+                        <Download size={18} /> Export Excel
                     </Button>
+                    {canImportFileNumbers && (
+                        <Button
+                            variant="secondary"
+                            onClick={() => setIsImportModalOpen(true)}
+                            className="flex items-center gap-2 bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-100"
+                        >
+                            <FileUp size={18} /> Import File Numbers
+                        </Button>
+                    )}
                     <Link to="/beneficiary/add">
                         <Button className="flex items-center gap-2">
                             <Plus size={18} /> Add Beneficiary
@@ -181,13 +194,19 @@ export function BeneficiaryListPage() {
                 </div>
             </div>
 
+            <ImportFileNumbersModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                onSuccess={fetchBeneficiaries}
+            />
+
             <Card className="p-4">
                 <div className="flex items-center justify-between gap-4 mb-6">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={20} />
                         <input
                             type="text"
-                            placeholder="Search by name or mobile number..."
+                            placeholder="Search by name, mobile, or file number..."
                             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -279,6 +298,15 @@ export function BeneficiaryListPage() {
                                                     <p className="text-xs text-text-muted flex items-center gap-2">
                                                         <Phone size={14} /> {b.mobile_no || 'No phone'}
                                                     </p>
+                                                    <div className="pt-2">
+                                                        <div className={`text-[10px] font-bold px-2 py-1 rounded inline-flex items-center gap-1.5 ${b.file_number ? 'bg-blue-50 text-blue-700 border border-blue-100' : 'bg-gray-50 text-gray-500 border border-gray-100'}`}>
+                                                            {b.file_number ? (
+                                                                <>File No: <span className="text-[11px] font-black">{b.file_number}</span></>
+                                                            ) : (
+                                                                'File No: Not Assigned'
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 </div>
 
                                                 {/* Action Buttons */}

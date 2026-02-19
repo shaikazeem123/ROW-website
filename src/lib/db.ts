@@ -28,6 +28,7 @@ export interface OfflineBeneficiary {
     created_at: string;
     sync_status: 'pending' | 'synced' | 'failed';
     error_message?: string;
+    file_number?: string;
 }
 
 export interface AppMetadata {

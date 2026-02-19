@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { History, MapPin, Calendar, Users, Plus, Download, Edit2 } from 'lucide-react';
+import { History, MapPin, Calendar, Plus, Download, Edit2 } from 'lucide-react';
 import { exportTripsToCSV } from '@/utils/exportUtils';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -152,14 +152,8 @@ export function TripHistoryPage() {
                             {filteredTrips.reduce((sum, t) => sum + t.finalDistance, 0)} km
                         </p>
                     </div>
-                    <div className="text-center p-3 bg-purple-50 rounded-lg">
-                        <p className="text-sm text-purple-700">Beneficiaries</p>
-                        <p className="text-2xl font-bold text-purple-900">
-                            {filteredTrips.reduce((sum, t) => sum + t.beneficiariesServed, 0)}
-                        </p>
-                    </div>
-                    <div className="text-center p-3 bg-orange-50 rounded-lg">
-                        <p className="text-sm text-orange-700">Fuel Cost</p>
+                    <div className="text-center p-3 bg-orange-50 rounded-lg md:col-span-2">
+                        <p className="text-sm text-orange-700">Total Fuel Cost</p>
                         <p className="text-2xl font-bold text-orange-900">
                             ₹{filteredTrips.reduce((sum, t) => sum + (t.fuelCost || 0), 0).toLocaleString()}
                         </p>
@@ -177,7 +171,6 @@ export function TripHistoryPage() {
                                     <th className="text-left p-3 text-sm font-semibold text-text-main">Bus</th>
                                     <th className="text-right p-3 text-sm font-semibold text-text-main">Distance</th>
                                     <th className="text-right p-3 text-sm font-semibold text-text-main">Duration</th>
-                                    <th className="text-right p-3 text-sm font-semibold text-text-main">Beneficiaries</th>
                                     <th className="text-right p-3 text-sm font-semibold text-text-main">Fuel</th>
                                     <th className="text-right p-3 text-sm font-semibold text-text-main">Actions</th>
                                 </tr>
@@ -201,12 +194,6 @@ export function TripHistoryPage() {
                                         <td className="p-3 text-sm text-right font-medium">{trip.finalDistance} km</td>
                                         <td className="p-3 text-sm text-right text-text-muted">
                                             {trip.durationHours.toFixed(1)}h
-                                        </td>
-                                        <td className="p-3 text-sm text-right">
-                                            <div className="flex items-center justify-end gap-1">
-                                                <Users size={14} className="text-purple-500" />
-                                                {trip.beneficiariesServed}
-                                            </div>
                                         </td>
                                         <td className="p-3 text-sm text-right text-text-muted">
                                             {trip.fuelEfficiency ? `${trip.fuelEfficiency} km/L` : '--'}

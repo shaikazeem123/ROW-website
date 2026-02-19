@@ -99,9 +99,17 @@ export function BeneficiaryProfilePage() {
                     </button>
                     <div>
                         <h1 className="text-2xl font-bold text-text-main">{beneficiary.name}</h1>
-                        <p className="text-text-muted flex items-center gap-2">
-                            Token: <span className="text-primary font-bold">#{beneficiary.token_no || 'N/A'}</span> • ID: {beneficiary.id?.slice(0, 8) || 'N/A'} • Registered on {new Date(beneficiary.date_of_registration).toLocaleDateString()}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-2 text-sm text-text-muted mt-1">
+                            <span className="flex items-center gap-1">Token: <b className="text-primary">#{beneficiary.token_no || 'N/A'}</b></span>
+                            <span>•</span>
+                            <span className="flex items-center gap-1">ID: <b className="text-gray-700">{beneficiary.id?.slice(0, 8) || 'N/A'}</b></span>
+                            <span>•</span>
+                            <span className={`px-2 py-0.5 rounded text-[11px] font-black uppercase tracking-wider border ${beneficiary.file_number ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-gray-50 text-gray-500 border-gray-100'}`}>
+                                {beneficiary.file_number ? `File No: ${beneficiary.file_number}` : 'File No: Not Assigned'}
+                            </span>
+                            <span>•</span>
+                            <span>Registered on {new Date(beneficiary.date_of_registration).toLocaleDateString()}</span>
+                        </div>
                     </div>
                 </div>
                 <div className="flex gap-3">
@@ -271,7 +279,7 @@ export function BeneficiaryProfilePage() {
                                                 </div>
                                                 {service.notes && (
                                                     <p className="text-sm text-text-muted mt-2 pl-4 border-l-2 border-gray-200 italic">
-                                                        "{service.notes}"
+                                                        &ldquo;{service.notes}&rdquo;
                                                     </p>
                                                 )}
                                             </div>
