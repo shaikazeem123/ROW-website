@@ -28,6 +28,7 @@ export function TripEntryPage() {
         departureTime: '09:00',
         returnTime: '17:00',
         purpose: 'Screening',
+        beneficiariesServed: '0',
         fuelLiters: '',
         fuelCost: '',
         notes: '',
@@ -70,6 +71,7 @@ export function TripEntryPage() {
                         departureTime: tripToEdit.departure_time,
                         returnTime: tripToEdit.return_time,
                         purpose: tripToEdit.purpose,
+                        beneficiariesServed: tripToEdit.beneficiaries_served?.toString() || '0',
                         fuelLiters: tripToEdit.fuel_liters?.toString() || '',
                         fuelCost: tripToEdit.fuel_cost?.toString() || '',
                         notes: tripToEdit.notes || '',
@@ -239,7 +241,7 @@ export function TripEntryPage() {
             return_time: formData.returnTime,
             duration_hours: calculatedData.duration,
             purpose: formData.purpose,
-            beneficiaries_served: 0,
+            beneficiaries_served: parseInt(formData.beneficiariesServed) || 0,
             fuel_liters: formData.fuelLiters ? parseFloat(formData.fuelLiters) : null,
             fuel_cost: formData.fuelCost ? parseFloat(formData.fuelCost) : null,
             fuel_efficiency: calculatedData.fuelEfficiency || null,
@@ -327,6 +329,15 @@ export function TripEntryPage() {
                                     { value: 'Emergency', label: 'Emergency' },
                                     { value: 'Other', label: 'Other' },
                                 ]}
+                            />
+                            <Input
+                                label="Beneficiaries Served"
+                                name="beneficiariesServed"
+                                type="number"
+                                value={formData.beneficiariesServed}
+                                onChange={handleChange}
+                                required
+                                min="0"
                             />
                             <Input
                                 label="Driver Name"

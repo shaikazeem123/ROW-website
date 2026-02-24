@@ -170,6 +170,7 @@ export function TripHistoryPage() {
                                     <th className="text-left p-3 text-sm font-semibold text-text-main">Location</th>
                                     <th className="text-left p-3 text-sm font-semibold text-text-main">Bus</th>
                                     <th className="text-right p-3 text-sm font-semibold text-text-main">Distance</th>
+                                    <th className="text-right p-3 text-sm font-semibold text-text-main">Beneficiaries</th>
                                     <th className="text-right p-3 text-sm font-semibold text-text-main">Duration</th>
                                     <th className="text-right p-3 text-sm font-semibold text-text-main">Fuel</th>
                                     <th className="text-right p-3 text-sm font-semibold text-text-main">Actions</th>
@@ -192,6 +193,7 @@ export function TripHistoryPage() {
                                         </td>
                                         <td className="p-3 text-sm text-text-muted">{trip.busNumber}</td>
                                         <td className="p-3 text-sm text-right font-medium">{trip.finalDistance} km</td>
+                                        <td className="p-3 text-sm text-right font-medium text-blue-600">{trip.beneficiariesServed}</td>
                                         <td className="p-3 text-sm text-right text-text-muted">
                                             {trip.durationHours.toFixed(1)}h
                                         </td>

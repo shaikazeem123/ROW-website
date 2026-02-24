@@ -17,6 +17,7 @@ import { ReportsPage } from '../pages/reports/Reports';
 import { SettingsPage } from '../pages/settings/Settings';
 import { SyncDashboardPage } from '../pages/admin/SyncDashboard';
 import { AdminControlPage } from '../pages/admin/AdminControl';
+import { TokenManagementPage } from '../pages/tokens/TokenManagement';
 import { NotFoundPage } from '../pages/NotFound';
 import { ProtectedRoute } from './ProtectedRoute';
 
@@ -100,6 +101,10 @@ export const router = createBrowserRouter([
                     {
                         path: 'admin/control',
                         element: <AdminControlPage />,
+                    },
+                    {
+                        path: 'token-management',
+                        element: <TokenManagementPage />,
                     },
                     {
                         path: 'sync',

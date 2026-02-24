@@ -20,7 +20,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, PermissionRules> = {
         canDeleteRecords: true,
         canApproveRequests: true,
         canImportFileNumbers: true,
-        accessiblePages: ['dashboard', 'beneficiary', 'services', 'reports', 'settings', 'admin']
+        accessiblePages: ['dashboard', 'beneficiary', 'services', 'reports', 'settings', 'admin', 'token-management']
     },
     Manager: {
         canManageUsers: false,
@@ -30,7 +30,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, PermissionRules> = {
         canDeleteRecords: false, // Managers typically can't delete hard records in this specific requirement
         canApproveRequests: true,
         canImportFileNumbers: true,
-        accessiblePages: ['dashboard', 'beneficiary', 'services', 'reports', 'settings']
+        accessiblePages: ['dashboard', 'beneficiary', 'services', 'reports', 'settings', 'token-management']
     },
     Staff: {
         canManageUsers: false,
@@ -43,7 +43,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, PermissionRules> = {
         // Staff has limited dashboard access in prompt requirements? 
         // "Staff Access only to: Beneficiary pages, Service pages"
         // I will follow that strict rule.
-        accessiblePages: ['beneficiary', 'services', 'settings'] // Settings for their own profile
+        accessiblePages: ['beneficiary', 'services', 'settings', 'token-management'] // Settings for their own profile
     }
 };
 

@@ -9,6 +9,7 @@ import {
     BarChart3,
     Settings,
     RefreshCw,
+    Ticket,
 } from 'lucide-react';
 import { NavItem } from './NavItem';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -22,6 +23,7 @@ const navItems = [
     { path: '/services/new', label: 'Service Entry', icon: Stethoscope },
     { path: '/services/history', label: 'Service History', icon: History },
     { path: '/reports', label: 'Reports & Analytics', icon: BarChart3 },
+    { path: '/token-management', label: 'Token Management', icon: Ticket },
     { path: '/sync', label: 'Sync Control', icon: RefreshCw },
     { path: '/settings', label: 'Settings & Admin', icon: Settings },
 ];
@@ -42,6 +44,7 @@ export function SidebarMenu({ collapsed, mobileOpen, onMobileClose }: SidebarMen
         if (item.path.startsWith('/beneficiary')) return hasPageAccess('beneficiary');
         if (item.path.startsWith('/services')) return hasPageAccess('services');
         if (item.path === '/reports') return hasPageAccess('reports');
+        if (item.path === '/token-management') return hasPageAccess('token-management');
         if (item.path === '/sync') return hasPageAccess('admin'); // Only Admin
         if (item.path === '/settings') return hasPageAccess('settings');
         return true;

@@ -1,0 +1,11 @@
+﻿
+> row-app@0.0.0 lint
+> eslint .
+
+
+C:\Users\Admin\Desktop\ROW\src\pages\tokens\TokenManagement.tsx
+   78:8   warning  React Hook useEffect has missing dependencies: 'fetchCenters' and 'fetchTokens'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  234:18  error    'err' is defined but never used                                                                                                      @typescript-eslint/no-unused-vars
+
+Ô£û 2 problems (1 error, 1 warning)
+

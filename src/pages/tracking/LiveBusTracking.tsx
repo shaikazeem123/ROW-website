@@ -81,25 +81,26 @@ export function LiveBusTrackingPage() {
             return;
         }
 
-        const totalDistance = filtered.reduce((sum, trip) => sum + trip.finalDistance, 0);
-        const totalFuelCost = filtered.reduce((sum, trip) => sum + (trip.fuelCost || 0), 0);
+        const totalDistance = Math.round(filtered.reduce((sum, trip) => sum + trip.finalDistance, 0));
+        const totalFuelCost = Math.round(filtered.reduce((sum, trip) => sum + (trip.fuelCost || 0), 0));
+        const totalBeneficiaries = filtered.reduce((sum, trip) => sum + (trip.beneficiariesServed || 0), 0);
 
         const tripsWithFuel = filtered.filter(t => t.fuelEfficiency);
         const averageFuelEfficiency = tripsWithFuel.length > 0
-            ? tripsWithFuel.reduce((sum, t) => sum + (t.fuelEfficiency || 0), 0) / tripsWithFuel.length
+            ? Number((tripsWithFuel.reduce((sum, t) => sum + (t.fuelEfficiency || 0), 0) / tripsWithFuel.length).toFixed(2))
             : 0;
 
         const uniqueDates = new Set(filtered.map(t => t.date));
         const uniqueLocations = new Set(filtered.map(t => t.location));
 
         setMonthlyStats({
-            totalDistance: Math.round(totalDistance),
+            totalDistance,
             totalTrips: filtered.length,
             operatingDays: uniqueDates.size,
-            averageDistance: Math.round(totalDistance / filtered.length),
-            totalBeneficiaries: 0,
-            totalFuelCost: Math.round(totalFuelCost),
-            averageFuelEfficiency: Number(averageFuelEfficiency.toFixed(2)),
+            averageDistance: filtered.length > 0 ? Math.round(totalDistance / filtered.length) : 0,
+            totalBeneficiaries,
+            totalFuelCost,
+            averageFuelEfficiency,
             locationsCovered: uniqueLocations.size,
         });
     }, [getFilteredTrips]);
@@ -136,7 +137,7 @@ export function LiveBusTrackingPage() {
                 returnTime: t.return_time,
                 durationHours: t.duration_hours,
                 purpose: t.purpose,
-                beneficiariesServed: 0,
+                beneficiariesServed: t.beneficiaries_served || 0,
                 fuelLiters: t.fuel_liters,
                 fuelCost: t.fuel_cost,
                 fuelEfficiency: t.fuel_efficiency,
