@@ -87,6 +87,10 @@ export const router = createBrowserRouter([
                         element: <ServiceEntryPage />,
                     },
                     {
+                        path: 'services/edit/:id',
+                        element: <ServiceEntryPage />,
+                    },
+                    {
                         path: 'services/history',
                         element: <ServiceHistoryPage />,
                     },

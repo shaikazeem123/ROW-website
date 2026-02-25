@@ -191,11 +191,11 @@ export const fetchServiceStats = async (
 ): Promise<ServiceChartData[]> => {
     try {
         let query = supabase
-            .from('services')
-            .select('id, service_date');
+            .from('service_entries')
+            .select('id, schedule_date');
 
-        if (filter.startDate) query = query.gte('service_date', filter.startDate);
-        if (filter.endDate) query = query.lte('service_date', filter.endDate);
+        if (filter.startDate) query = query.gte('schedule_date', filter.startDate);
+        if (filter.endDate) query = query.lte('schedule_date', filter.endDate);
 
         const { data, error } = await query;
 
@@ -205,8 +205,8 @@ export const fetchServiceStats = async (
         const groupedData: Record<string, number> = {};
 
         data.forEach((item) => {
-            if (!item.service_date) return;
-            const key = formatDateKey(item.service_date, timeframe);
+            if (!item.schedule_date) return;
+            const key = formatDateKey(item.schedule_date, timeframe);
             groupedData[key] = (groupedData[key] || 0) + 1;
         });
 
@@ -230,11 +230,11 @@ export const fetchServiceSummary = async (
 ): Promise<ServiceSummaryStats> => {
     try {
         let query = supabase
-            .from('services')
-            .select('id, service_date, service_type, beneficiary_id');
+            .from('service_entries')
+            .select('id, schedule_date, service_code, file_number');
 
-        if (filter.startDate) query = query.gte('service_date', filter.startDate);
-        if (filter.endDate) query = query.lte('service_date', filter.endDate);
+        if (filter.startDate) query = query.gte('schedule_date', filter.startDate);
+        if (filter.endDate) query = query.lte('schedule_date', filter.endDate);
 
         const { data, error } = await query;
 
@@ -247,18 +247,18 @@ export const fetchServiceSummary = async (
         };
 
         const totalServices = data.length;
-        const totalBeneficiaries = new Set(data.map(s => s.beneficiary_id)).size;
+        const totalBeneficiaries = new Set(data.map(s => s.file_number)).size;
 
         // Find most active service
         const serviceCounts: Record<string, number> = {};
         data.forEach(s => {
-            serviceCounts[s.service_type] = (serviceCounts[s.service_type] || 0) + 1;
+            serviceCounts[s.service_code] = (serviceCounts[s.service_code] || 0) + 1;
         });
         const mostActiveService = Object.entries(serviceCounts)
             .sort((a, b) => b[1] - a[1])[0][0];
 
         // Average services per day
-        const uniqueDays = new Set(data.map(s => s.service_date)).size;
+        const uniqueDays = new Set(data.map(s => s.schedule_date)).size;
         const avgServicesPerDay = Number((totalServices / (uniqueDays || 1)).toFixed(1));
 
         return {

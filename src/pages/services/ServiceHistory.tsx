@@ -1,72 +1,78 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
+import { Input } from '@/components/common/Input';
 import {
     Clock,
-    User as UserIcon,
     MapPin,
     Stethoscope,
     Search,
     RefreshCw,
     Download,
-    Users
+    Users,
+    ShieldCheck,
+    History as HistoryIcon,
+    Edit
 } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
 import ExcelJS from 'exceljs';
+import type { ServiceEntry } from '@/types/serviceEntry';
 
-interface ServiceRecord {
-    id: string;
-    service_type: string;
-    service_date: string;
-    provider_name?: string;
-    venue?: string;
-    fee_charged: number;
-    beneficiary_id: string;
-    beneficiary: {
+interface ExtendedServiceRecord extends ServiceEntry {
+    beneficiary?: {
         name: string;
-        file_number?: string;
     };
 }
 
 export function ServiceHistoryPage() {
-    const [services, setServices] = useState<ServiceRecord[]>([]);
+    const [services, setServices] = useState<ExtendedServiceRecord[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
 
+    const navigate = useNavigate();
+    const { role } = usePermissions();
+    const isAdmin = role === 'Admin';
+
     const fetchHistory = useCallback(async () => {
         setIsLoading(true);
         try {
-            const { data, error } = await supabase
-                .from('services')
-                .select(`
-                    id, 
-                    service_type, 
-                    service_date, 
-                    provider_name, 
-                    venue, 
-                    fee_charged,
-                    beneficiary_id,
-                    beneficiary:beneficiaries(name, file_number)
-                `)
-                .order('service_date', { ascending: false });
+            const { data: entries, error: entriesError } = await supabase
+                .from('service_entries')
+                .select('*')
+                .order('schedule_date', { ascending: false });
 
-            if (error) throw error;
+            if (entriesError) throw entriesError;
 
-            // Map the data to ensure beneficiary is a single object, not an array
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const mappedData: ServiceRecord[] = (data || []).map((item: any) => ({
-                id: item.id,
-                service_type: item.service_type,
-                service_date: item.service_date,
-                provider_name: item.provider_name,
-                venue: item.venue,
-                fee_charged: item.fee_charged,
-                beneficiary_id: item.beneficiary_id,
-                beneficiary: Array.isArray(item.beneficiary)
-                    ? item.beneficiary[0]
-                    : item.beneficiary || { name: 'Unknown' }
+            if (!entries || entries.length === 0) {
+                setServices([]);
+                return;
+            }
+
+            const fileNumbers = Array.from(new Set(entries.map(e => e.file_number))).filter(Boolean);
+
+            let bMap = new Map<string, string>();
+            if (fileNumbers.length > 0) {
+                const { data: beneficiaries, error: bError } = await supabase
+                    .from('beneficiaries')
+                    .select('name, file_number')
+                    .in('file_number', fileNumbers);
+
+                if (!bError && beneficiaries) {
+                    beneficiaries.forEach(b => {
+                        if (b.file_number) bMap.set(b.file_number, b.name);
+                    });
+                }
+            }
+
+            const mappedData: ExtendedServiceRecord[] = entries.map(item => ({
+                ...item,
+                beneficiary: {
+                    name: bMap.get(item.file_number) || 'Beneficiary Not Found'
+                }
             }));
 
             setServices(mappedData);
@@ -82,213 +88,257 @@ export function ServiceHistoryPage() {
     }, [fetchHistory]);
 
     const filteredServices = services.filter(s => {
-        const matchesSearch = (s.beneficiary.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (s.beneficiary.file_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (s.service_type || '').toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch =
+            (s.beneficiary?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (s.file_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (s.service_code || '').toLowerCase().includes(searchTerm.toLowerCase());
 
-        const serviceDate = s.service_date;
+        const serviceDate = s.schedule_date;
         const matchesFrom = !fromDate || serviceDate >= fromDate;
         const matchesTo = !toDate || serviceDate <= toDate;
 
         return matchesSearch && matchesFrom && matchesTo;
     });
 
-    const uniqueBeneficiaryCount = new Set(filteredServices.map(s => s.beneficiary_id)).size;
+    const uniqueBeneficiaryCount = new Set(filteredServices.map(s => s.file_number)).size;
 
     const handleExport = async () => {
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Service History');
 
         worksheet.columns = [
-            { header: 'DATE', key: 'date', width: 15 },
-            { header: 'FILE NUMBER', key: 'file_number', width: 20 },
-            { header: ' BENFICIARY NAME', key: 'name', width: 25 },
-            { header: 'SERVICE NAME', key: 'service', width: 25 },
-            { header: 'PROVIDER', key: 'provider', width: 20 },
-            { header: 'VENUE', key: 'venue', width: 20 },
+            { header: 'Service ID', key: 'id', width: 36 },
+            { header: 'Status', key: 'status', width: 15 },
+            { header: 'File Number', key: 'file_number', width: 15 },
+            { header: 'Beneficiary Name', key: 'beneficiary_name', width: 25 },
+            { header: 'Schedule Date', key: 'schedule_date', width: 15 },
+            { header: 'Start Date', key: 'start_date', width: 15 },
+            { header: 'End Date', key: 'end_date', width: 15 },
+            { header: 'Location Code', key: 'location_code', width: 15 },
+            { header: 'Service Code', key: 'service_code', width: 15 },
+            { header: 'Provider', key: 'service_provider_code', width: 20 },
+            { header: 'Recommendation', key: 'recommendation', width: 30 },
+            { header: 'Contribution', key: 'contribution', width: 12 },
+            { header: 'Balance', key: 'balance', width: 12 },
+            { header: 'Total', key: 'total', width: 12 },
+            { header: 'Outcome', key: 'outcome', width: 15 },
+            { header: 'Outcome Desc', key: 'outcome_description', width: 30 },
+            { header: 'Receipt No', key: 'receipt_no', width: 15 },
+            { header: 'Total Hours', key: 'total_hours', width: 12 },
+            { header: 'Mode of Service', key: 'mode_of_service', width: 15 },
+            { header: 'Created At', key: 'created_at', width: 20 },
+            { header: 'Remarks', key: 'remarks', width: 30 }
         ];
 
         filteredServices.forEach(s => {
             worksheet.addRow({
-                date: new Date(s.service_date).toLocaleDateString(),
-                file_number: s.beneficiary.file_number || 'N/A',
-                name: s.beneficiary.name,
-                service: s.service_type,
-                provider: s.provider_name || 'N/A',
-                venue: s.venue || 'N/A',
+                ...s,
+                beneficiary_name: s.beneficiary?.name || 'N/A'
             });
         });
-
-        worksheet.getRow(1).font = { bold: true };
 
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Service_History_${new Date().toISOString().split('T')[0]}.xlsx`;
-        a.click();
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `Service_History_Audit_${new Date().toISOString().split('T')[0]}.xlsx`;
+        anchor.click();
+        window.URL.revokeObjectURL(url);
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto space-y-6 pb-20">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-text-main">Service History</h1>
-                    <p className="text-text-muted text-sm italic">Showing detailed history of services provided.</p>
+                    <h1 className="text-2xl font-bold text-text-main flex items-center gap-2">
+                        <HistoryIcon className="text-primary" /> Service History Audit
+                    </h1>
+                    <p className="text-text-muted text-sm mt-1">Review and audit all 21 fields of service entry records.</p>
                 </div>
-                <div className="flex gap-2">
-                    <Button
-                        variant="outline"
-                        onClick={fetchHistory}
-                        className="flex items-center gap-2"
-                        disabled={isLoading}
-                    >
-                        <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} /> Refresh
+                <div className="flex items-center gap-3">
+                    <Button variant="secondary" onClick={fetchHistory} className="bg-white">
+                        <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
                     </Button>
-                    <Button
-                        variant="outline"
-                        onClick={handleExport}
-                        className="flex items-center gap-2"
-                        disabled={isLoading || filteredServices.length === 0}
-                    >
-                        <Download size={18} /> Export Excel
+                    <Button onClick={handleExport} className="flex items-center gap-2 shadow-lg shadow-primary/20">
+                        <Download size={18} /> Export Audit Excel
                     </Button>
                 </div>
             </div>
 
-            <Card className="p-4">
-                <div className="flex flex-col md:flex-row items-end gap-4 mb-6">
-                    <div className="relative flex-1 w-full">
-                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">Search Records</label>
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                            <input
-                                type="text"
-                                placeholder="Name, File No, Service..."
-                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
+            <Card className="p-6">
+                <div className="flex flex-col md:flex-row gap-4 mb-8">
+                    <div className="flex-1 relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <Input
+                            placeholder="Search by Beneficiary, File Number or Service..."
+                            className="pl-10"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
                     </div>
-
-                    <div className="w-full md:w-auto">
-                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">From Date</label>
-                        <input
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-xl border border-gray-100">
+                            <ShieldCheck size={16} className="text-blue-500" />
+                            <span className="text-xs font-bold text-gray-500 uppercase">Filters:</span>
+                        </div>
+                        <Input
                             type="date"
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                            className="w-40"
                             value={fromDate}
                             onChange={(e) => setFromDate(e.target.value)}
                         />
-                    </div>
-
-                    <div className="w-full md:w-auto">
-                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">To Date</label>
-                        <input
+                        <span className="text-gray-400">to</span>
+                        <Input
                             type="date"
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                            className="w-40"
                             value={toDate}
                             onChange={(e) => setToDate(e.target.value)}
                         />
+                        {(searchTerm || fromDate || toDate) && (
+                            <button
+                                onClick={() => { setSearchTerm(''); setFromDate(''); setToDate(''); }}
+                                className="text-xs font-bold text-primary hover:underline px-2"
+                            >
+                                Clear All
+                            </button>
+                        )}
                     </div>
-
-                    <Button
-                        variant="secondary"
-                        onClick={() => { setSearchTerm(''); setFromDate(''); setToDate(''); }}
-                        className="h-10 px-4 whitespace-nowrap text-sm"
-                    >
-                        Reset
-                    </Button>
                 </div>
 
-                {/* Filter Summary */}
                 {!isLoading && (
-                    <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-4 bg-primary/5 rounded-xl border border-primary/10 flex items-center justify-between">
-                            <div>
-                                <p className="text-xs font-bold text-primary uppercase tracking-wider mb-1">Total Services</p>
-                                <h3 className="text-3xl font-black text-primary">{filteredServices.length}</h3>
-                                <p className="text-[10px] text-primary/60 font-medium mt-1 italic">Total sessions delivered</p>
-                            </div>
-                            <div className="p-3 bg-white rounded-lg shadow-sm">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                        <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+                            <div className="p-3 bg-primary/10 rounded-xl">
                                 <Stethoscope size={24} className="text-primary" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Total Services</p>
+                                <h3 className="text-2xl font-black text-primary">{filteredServices.length}</h3>
                             </div>
                         </div>
 
-                        <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 flex items-center justify-between">
-                            <div>
-                                <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">Beneficiaries Served</p>
-                                <h3 className="text-3xl font-black text-blue-700">{uniqueBeneficiaryCount}</h3>
-                                <p className="text-[10px] text-blue-400 font-medium mt-1 italic">Unique individuals reached</p>
-                            </div>
-                            <div className="p-3 bg-white rounded-lg shadow-sm">
+                        <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+                            <div className="p-3 bg-blue-100 rounded-xl">
                                 <Users size={24} className="text-blue-600" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Beneficiaries</p>
+                                <h3 className="text-2xl font-black text-blue-700">{uniqueBeneficiaryCount}</h3>
+                            </div>
+                        </div>
+
+                        <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+                            <div className="p-3 bg-green-100 rounded-xl">
+                                <Clock size={24} className="text-green-600" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Total Hours</p>
+                                <h3 className="text-2xl font-black text-green-700">
+                                    {filteredServices.reduce((sum, s) => sum + (s.total_hours || 0), 0).toFixed(1)}
+                                </h3>
+                            </div>
+                        </div>
+
+                        <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+                            <div className="p-3 bg-purple-100 rounded-xl">
+                                <MapPin size={24} className="text-purple-600" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Locations</p>
+                                <h3 className="text-2xl font-black text-purple-700">
+                                    {new Set(filteredServices.map(s => s.location_code)).size}
+                                </h3>
                             </div>
                         </div>
                     </div>
                 )}
 
                 {isLoading ? (
-                    <div className="py-20 flex flex-col items-center justify-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-                        <p className="text-text-muted">Loading service history...</p>
+                    <div className="py-24 flex flex-col items-center justify-center">
+                        <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"></div>
+                        <p className="text-text-muted font-medium">Synchronizing service records...</p>
                     </div>
                 ) : filteredServices.length === 0 ? (
-                    <div className="py-20 text-center">
-                        <Clock size={48} className="mx-auto text-gray-200 mb-4" />
-                        <p className="text-text-muted">No service records found.</p>
+                    <div className="py-24 text-center">
+                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Clock size={32} className="text-gray-200" />
+                        </div>
+                        <p className="text-gray-400 font-medium">No service records found for the selected criteria.</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="border-b border-gray-100 pb-4">
-                                <tr>
-                                    <th className="py-4 font-bold text-xs uppercase text-gray-500 tracking-wider pl-4">Date</th>
-                                    <th className="py-4 font-bold text-xs uppercase text-gray-500 tracking-wider">Beneficiary Details</th>
-                                    <th className="py-4 font-bold text-xs uppercase text-gray-500 tracking-wider">Service Delivered</th>
-                                    <th className="py-4 font-bold text-xs uppercase text-gray-500 tracking-wider pr-4">Provider & Venue</th>
+                    <div className="overflow-x-auto -mx-6 px-6">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="border-b border-gray-100">
+                                    <th className="py-4 font-bold text-[10px] uppercase text-gray-400 tracking-wider pl-4">Schedule Date</th>
+                                    <th className="py-4 font-bold text-[10px] uppercase text-gray-400 tracking-wider">Beneficiary (File No)</th>
+                                    <th className="py-4 font-bold text-[10px] uppercase text-gray-400 tracking-wider">Status</th>
+                                    <th className="py-4 font-bold text-[10px] uppercase text-gray-400 tracking-wider">Service & Hours</th>
+                                    <th className="py-4 font-bold text-[10px] uppercase text-gray-400 tracking-wider">Location & Mode</th>
+                                    {isAdmin && <th className="py-4 font-bold text-[10px] uppercase text-gray-400 tracking-wider pr-4 text-right">Actions</th>}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
                                 {filteredServices.map((service) => (
-                                    <tr key={service.id} className="hover:bg-gray-50/50 transition-colors">
+                                    <tr key={service.id} className="hover:bg-gray-50/50 transition-colors group">
                                         <td className="py-5 pl-4">
-                                            <div className="text-sm font-semibold text-text-main">
-                                                {new Date(service.service_date).toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' })}
+                                            <div className="text-sm font-bold text-gray-900 leading-tight">
+                                                {new Date(service.schedule_date).toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' })}
                                             </div>
-                                            <div className="text-[10px] text-gray-400 font-medium">Recorded {(new Date(service.id).getMilliseconds() % 10 + 2)} min ago</div>
+                                            <div className="text-[10px] text-gray-400 mt-0.5">
+                                                Start: {new Date(service.start_date).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                            </div>
                                         </td>
                                         <td className="py-5">
                                             <div className="flex flex-col">
-                                                <span className="text-sm font-bold text-gray-900 leading-none mb-1">
-                                                    {service.beneficiary.name}
+                                                <span className="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors">
+                                                    {service.beneficiary?.name || 'In-Process...'}
                                                 </span>
-                                                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded border inline-block w-fit ${service.beneficiary.file_number ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-gray-50 text-gray-500 border-gray-100'}`}>
-                                                    {service.beneficiary.file_number ? `FILE: ${service.beneficiary.file_number}` : 'NO FILE #'}
+                                                <span className="text-[11px] font-black text-blue-600 tracking-tight">
+                                                    #{service.file_number}
                                                 </span>
                                             </div>
                                         </td>
                                         <td className="py-5">
-                                            <div className="flex items-center gap-2">
-                                                <div className="p-1.5 bg-primary/5 rounded-lg text-primary">
-                                                    <Stethoscope size={14} />
+                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wider ${service.status === 'AVAILED'
+                                                ? 'bg-green-100 text-green-700'
+                                                : 'bg-amber-100 text-amber-700'
+                                                }`}>
+                                                {service.status}
+                                            </span>
+                                        </td>
+                                        <td className="py-5">
+                                            <div className="flex flex-col">
+                                                <div className="flex items-center gap-1.5 text-sm font-bold text-gray-700 uppercase">
+                                                    <Stethoscope size={14} className="text-primary" /> {service.service_code}
                                                 </div>
-                                                <span className="text-sm font-semibold text-text-main uppercase tracking-tight">
-                                                    {service.service_type}
-                                                </span>
+                                                <div className="text-[10px] text-gray-400 font-medium flex items-center gap-1 mt-0.5">
+                                                    <Clock size={10} /> {service.total_hours} Hours Spent
+                                                </div>
                                             </div>
                                         </td>
-                                        <td className="py-5 pr-4">
-                                            <div className="space-y-1">
-                                                <div className="text-xs font-medium text-gray-700 flex items-center gap-1.5">
-                                                    <UserIcon size={12} className="text-gray-400" /> {service.provider_name || 'Anonymous'}
+                                        <td className="py-5">
+                                            <div className="flex flex-col">
+                                                <div className="text-xs font-bold text-gray-700 flex items-center gap-1.5 uppercase">
+                                                    <MapPin size={12} className="text-gray-400" /> {service.location_code}
                                                 </div>
-                                                <div className="text-xs text-gray-400 flex items-center gap-1.5">
-                                                    <MapPin size={12} /> {service.venue || 'On-site'}
+                                                <div className="text-[10px] text-primary/60 font-bold bg-primary/5 px-1.5 py-0.5 rounded w-fit mt-1">
+                                                    {service.mode_of_service}
                                                 </div>
                                             </div>
                                         </td>
+                                        {isAdmin && (
+                                            <td className="py-5 pr-4 text-right">
+                                                <Button
+                                                    variant="secondary"
+                                                    className="h-8 px-2 flex items-center gap-1.5 text-[11px] bg-blue-50 text-blue-600 border-none hover:bg-blue-100"
+                                                    onClick={() => navigate(`/services/edit/${service.id}`)}
+                                                >
+                                                    <Edit size={14} /> Edit
+                                                </Button>
+                                            </td>
+                                        )}
                                     </tr>
                                 ))}
                             </tbody>

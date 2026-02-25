@@ -97,11 +97,11 @@ export function DashboardPage() {
 
                 // 3. Fetch total services provided in period
                 let sQuery = supabase
-                    .from('services')
+                    .from('service_entries')
                     .select('*', { count: 'exact', head: true });
 
-                if (globalFilter.startDate) sQuery = sQuery.gte('service_date', globalFilter.startDate);
-                if (globalFilter.endDate) sQuery = sQuery.lte('service_date', globalFilter.endDate);
+                if (globalFilter.startDate) sQuery = sQuery.gte('schedule_date', globalFilter.startDate);
+                if (globalFilter.endDate) sQuery = sQuery.lte('schedule_date', globalFilter.endDate);
 
                 const { count: servicesCount, error: srvError } = await sQuery;
                 if (srvError) throw srvError;

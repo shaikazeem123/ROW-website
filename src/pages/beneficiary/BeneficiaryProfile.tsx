@@ -46,15 +46,28 @@ export function BeneficiaryProfilePage() {
             if (bError) throw bError;
             setBeneficiary(bData);
 
-            // Fetch service history
-            const { data: sData, error: sError } = await supabase
-                .from('services')
-                .select('*')
-                .eq('beneficiary_id', id)
-                .order('service_date', { ascending: false });
+            // Fetch service history from service_entries using file_number
+            if (bData.file_number) {
+                const { data: sData, error: sError } = await supabase
+                    .from('service_entries')
+                    .select('*')
+                    .eq('file_number', bData.file_number)
+                    .order('schedule_date', { ascending: false });
 
-            if (sError) throw sError;
-            setServices(sData || []);
+                if (sError) throw sError;
+
+                // Map to the Service interface used in this component
+                const mappedServices: Service[] = (sData || []).map((s: any) => ({
+                    id: s.id,
+                    service_type: s.service_code,
+                    service_date: s.schedule_date,
+                    provider_name: s.service_provider_code,
+                    venue: s.location_code,
+                    notes: s.remarks,
+                    fee_charged: s.total_hours // Just an example, maybe fee is internal now
+                }));
+                setServices(mappedServices);
+            }
 
         } catch (error) {
             console.error('Error fetching data:', error);

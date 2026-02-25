@@ -12,10 +12,11 @@ interface Beneficiary {
 interface BeneficiarySelectProps {
     onSelect: (beneficiary: Beneficiary) => void;
     selectedId?: string;
+    selectedFileNumber?: string | null;
     placeholder?: string;
 }
 
-export function BeneficiarySelect({ onSelect, selectedId, placeholder = "Select Beneficiary (File No / Name)" }: BeneficiarySelectProps) {
+export function BeneficiarySelect({ onSelect, selectedId, selectedFileNumber, placeholder = "Select Beneficiary (File No / Name)" }: BeneficiarySelectProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [results, setResults] = useState<Beneficiary[]>([]);
@@ -23,15 +24,19 @@ export function BeneficiarySelect({ onSelect, selectedId, placeholder = "Select 
     const [selectedBeneficiary, setSelectedBeneficiary] = useState<Beneficiary | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Initial fetch if selectedId is provided
+    // Initial fetch if selectedId or selectedFileNumber is provided
     useEffect(() => {
-        if (selectedId && !selectedBeneficiary) {
+        if ((selectedId || selectedFileNumber) && !selectedBeneficiary) {
             const fetchSelected = async () => {
-                const { data, error } = await supabase
-                    .from('beneficiaries')
-                    .select('id, name, file_number')
-                    .eq('id', selectedId)
-                    .single();
+                let query = supabase.from('beneficiaries').select('id, name, file_number');
+
+                if (selectedId) {
+                    query = query.eq('id', selectedId);
+                } else if (selectedFileNumber) {
+                    query = query.eq('file_number', selectedFileNumber);
+                }
+
+                const { data, error } = await query.maybeSingle();
 
                 if (!error && data) {
                     setSelectedBeneficiary(data);
@@ -40,7 +45,7 @@ export function BeneficiarySelect({ onSelect, selectedId, placeholder = "Select 
             };
             fetchSelected();
         }
-    }, [selectedId, selectedBeneficiary]);
+    }, [selectedId, selectedFileNumber, selectedBeneficiary]);
 
     const searchBeneficiaries = useCallback(async (term: string) => {
         if (!term || term.length < 2) {
