@@ -70,7 +70,8 @@ export function ScheduleUpload() {
             const normalizedData = rawData.map(row => {
                 const newRow: Record<string, unknown> = {};
                 Object.keys(row).forEach(key => {
-                    newRow[key.toLowerCase().trim().replace(/ /g, '_')] = row[key];
+                    const normalizedKey = key.replace(/^\ufeff/, '').toLowerCase().trim().replace(/ /g, '_');
+                    newRow[normalizedKey] = row[key];
                 });
                 return newRow as unknown as ScheduleRow;
             });
@@ -96,10 +97,11 @@ export function ScheduleUpload() {
 
                 const str = String(dateStr).trim();
 
-                // Try DD-MM-YYYY format (most common in your case)
+                // Try DD-MM-YYYY or MM-DD-YYYY format
                 if (str.match(/^\d{2}-\d{2}-\d{4}$/)) {
-                    const [day, month, year] = str.split('-').map(Number);
-                    return new Date(year, month - 1, day);
+                    const [p1, p2, p3] = str.split('-').map(Number);
+                    if (p2 > 12) return new Date(p3, p2 - 1, p1); // Must be DD-MM-YYYY
+                    return new Date(p3, p1 - 1, p2); // Default to DD-MM-YYYY
                 }
 
                 // Try DD/MM/YYYY format
@@ -111,17 +113,6 @@ export function ScheduleUpload() {
                 // Try YYYY-MM-DD format (ISO)
                 if (str.match(/^\d{4}-\d{2}-\d{2}$/)) {
                     return new Date(str);
-                }
-
-                // Try MM-DD-YYYY format
-                if (str.match(/^\d{2}-\d{2}-\d{4}$/)) {
-                    const parts = str.split('-').map(Number);
-                    // Could be DD-MM-YYYY or MM-DD-YYYY, assume DD-MM-YYYY first
-                    if (parts[1] > 12) {
-                        // Must be DD-MM-YYYY
-                        return new Date(parts[2], parts[1] - 1, parts[0]);
-                    }
-                    return new Date(parts[2], parts[0] - 1, parts[1]);
                 }
 
                 // Fallback: try native Date parser
@@ -231,42 +222,41 @@ export function ScheduleUpload() {
         // Create sample data for the template
         const sampleData = [
             {
-                'Scheduled Date': '2026-02-10',
+                'Scheduled Date': '2026-03-10',
                 'Location Name': 'Chanrayapatna',
                 'Address': 'Chanrayapatna, Hassan District, Karnataka'
             },
             {
-                'Scheduled Date': '2026-02-15',
+                'Scheduled Date': '2026-03-15',
                 'Location Name': 'Hesarghatta',
                 'Address': 'Hesarghatta, Bangalore Rural, Karnataka'
             },
             {
-                'Scheduled Date': '2026-02-20',
+                'Scheduled Date': '2026-03-20',
                 'Location Name': 'Nalur',
                 'Address': 'Nalur, Bangalore, Karnataka'
             },
             {
-                'Scheduled Date': '2026-02-25',
+                'Scheduled Date': '2026-03-25',
                 'Location Name': 'Sonnenahalli',
                 'Address': 'Sonnenahalli, Bangalore, Karnataka'
             }
         ];
 
-        // Convert to CSV
-        const csv = Papa.unparse(sampleData);
+        // Generate Excel file using the XLSX library already imported
+        const ws = XLSX.utils.json_to_sheet(sampleData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Schedule Template");
 
-        // Create blob and download
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
+        // Set column widths for better readability
+        ws['!cols'] = [
+            { wch: 15 }, // Scheduled Date
+            { wch: 20 }, // Location Name
+            { wch: 40 }  // Address
+        ];
 
-        link.setAttribute('href', url);
-        link.setAttribute('download', 'monthly_schedule_template.csv');
-        link.style.visibility = 'hidden';
-
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // Trigger download
+        XLSX.writeFile(wb, 'monthly_schedule_template.xlsx');
     };
 
     return (
@@ -279,7 +269,7 @@ export function ScheduleUpload() {
                 <h4 className="text-sm font-bold text-blue-900 mb-2">Instructions:</h4>
                 <ul className="list-disc list-inside text-xs text-blue-800 space-y-1">
                     <li>Upload CSV or Excel (.xlsx) file.</li>
-                    <li>Required Columns: <strong>Date, Location Name, Address</strong></li>
+                    <li>Required Columns: <strong>Scheduled Date, Location Name, Address</strong></li>
                     <li>Format: Must contain exactly <strong>4 unique locations</strong> for the designated month.</li>
                     <li>System will automatically detect the Month/Year from the dates.</li>
                 </ul>
@@ -292,7 +282,7 @@ export function ScheduleUpload() {
                     className="flex items-center gap-2 text-sm"
                 >
                     <Download size={16} />
-                    Download CSV Template
+                    Download Sample Template (.xlsx)
                 </Button>
             </div>
 
