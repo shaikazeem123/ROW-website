@@ -7,11 +7,11 @@ import {
     ArrowUpRight,
     Bell,
     ArrowRight,
-    Filter
+    Filter,
+    AlertTriangle
 } from 'lucide-react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
-import { getEventsByMonth } from '@/data/screeningSchedule';
 import { Link } from 'react-router-dom';
 import { BeneficiaryRegistrationChart } from '@/components/dashboard/BeneficiaryRegistrationChart';
 import { ServiceDashboardChart } from '@/components/dashboard/ServiceDashboardChart';
@@ -22,6 +22,12 @@ interface MappedCamp {
     location: string;
     date: string;
     type: string;
+}
+
+interface UpcomingAlert {
+    location: string;
+    date: string;
+    daysUntil: number;
 }
 
 import { useState, useEffect } from 'react';
@@ -37,6 +43,8 @@ export function DashboardPage() {
     });
 
     const [upcomingCamps, setUpcomingCamps] = useState<MappedCamp[]>([]);
+    const [upcomingAlerts, setUpcomingAlerts] = useState<UpcomingAlert[]>([]);
+    const [missedCampCount, setMissedCampCount] = useState(0);
 
     // Global Filter State
     const [timeframe, setTimeframe] = useState<TimeFrame>('all');
@@ -138,6 +146,45 @@ export function DashboardPage() {
                     setUpcomingCamps(mappedCamps);
                 }
 
+                // 5. Fetch upcoming alerts (next 7 days) for manager notification
+                const futureDate = new Date();
+                futureDate.setDate(futureDate.getDate() + 7);
+                const futureDateStr = futureDate.toISOString().split('T')[0];
+
+                const { data: alertSchedules } = await supabase
+                    .from('monthly_schedules')
+                    .select('location_name, scheduled_date')
+                    .eq('is_active', true)
+                    .gte('scheduled_date', currentDate.toISOString().split('T')[0])
+                    .lte('scheduled_date', futureDateStr)
+                    .order('scheduled_date', { ascending: true });
+
+                if (alertSchedules) {
+                    const todayMs = currentDate.getTime();
+                    const alerts: UpcomingAlert[] = alertSchedules.map(s => {
+                        const campDate = new Date(s.scheduled_date + 'T00:00:00');
+                        const diffDays = Math.ceil((campDate.getTime() - todayMs) / (1000 * 60 * 60 * 24));
+                        return {
+                            location: s.location_name,
+                            date: campDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+                            daysUntil: diffDays
+                        };
+                    });
+                    setUpcomingAlerts(alerts);
+                }
+
+                // 6. Fetch missed camps count (past scheduled, no trip, not completed/cancelled)
+                const { count: missedCount } = await supabase
+                    .from('monthly_schedules')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('is_active', true)
+                    .lt('scheduled_date', currentDate.toISOString().split('T')[0])
+                    .is('trip_id', null)
+                    .neq('status', 'completed')
+                    .neq('status', 'cancelled');
+
+                setMissedCampCount(missedCount || 0);
+
             } catch (err) {
                 console.error('Error fetching dashboard stats:', err);
             } finally {
@@ -186,12 +233,6 @@ export function DashboardPage() {
             link: '/services/history'
         },
     ];
-
-    // Get current month screening events
-    const today = new Date();
-    const currentMonthEvents = getEventsByMonth(today.getFullYear(), today.getMonth() + 1);
-    const screeningEvents = currentMonthEvents.filter(event => event.eventType === 'screening');
-    const hasScreenings = screeningEvents.length > 0;
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -259,25 +300,54 @@ export function DashboardPage() {
                 </div>
             </div>
 
-            {/* Screening Notification Banner */}
-            {hasScreenings && (
+            {/* Upcoming Camp Alerts (Next 7 Days) */}
+            {upcomingAlerts.length > 0 && (
                 <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4 shadow-sm">
                     <div className="flex items-start gap-3">
                         <div className="p-2 bg-blue-500 rounded-lg shrink-0">
                             <Bell className="text-white" size={20} />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-blue-900 mb-1 flex items-center gap-2">
-                                Screening Assessment This Month
+                            <h3 className="font-semibold text-blue-900 mb-1">
+                                Upcoming Camps — Next 7 Days
                             </h3>
-                            <p className="text-sm text-blue-700 mb-3">
-                                {screeningEvents.length} screening {screeningEvents.length === 1 ? 'session' : 'sessions'} scheduled for the first 5 days •
-                                {' '}Locations: {screeningEvents.slice(0, 3).map(e => e.location).join(', ')}
-                                {screeningEvents.length > 3 && ` +${screeningEvents.length - 3} more`}
-                            </p>
+                            <div className="space-y-1 mb-3">
+                                {upcomingAlerts.map((alert, i) => (
+                                    <p key={i} className="text-sm text-blue-700">
+                                        <span className="font-semibold">{alert.location}</span> — {alert.date}
+                                        {alert.daysUntil === 0 && <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-bold">TODAY</span>}
+                                        {alert.daysUntil === 1 && <span className="ml-2 px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs font-bold">TOMORROW</span>}
+                                        {alert.daysUntil > 1 && <span className="ml-2 text-xs text-blue-500">in {alert.daysUntil} days</span>}
+                                    </p>
+                                ))}
+                            </div>
                             <Link to="/calendar">
                                 <Button variant="secondary" className="text-sm flex items-center gap-2 bg-white hover:bg-blue-50 text-blue-700">
                                     View Full Calendar <ArrowRight size={16} />
+                                </Button>
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Missed Camps Warning */}
+            {missedCampCount > 0 && (
+                <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-lg p-4 shadow-sm">
+                    <div className="flex items-start gap-3">
+                        <div className="p-2 bg-red-500 rounded-lg shrink-0">
+                            <AlertTriangle className="text-white" size={20} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-red-900 mb-1">
+                                {missedCampCount} Missed Camp{missedCampCount !== 1 ? 's' : ''}
+                            </h3>
+                            <p className="text-sm text-red-700 mb-3">
+                                Scheduled camps with no trip logged. Please review and update trip records.
+                            </p>
+                            <Link to="/calendar">
+                                <Button variant="secondary" className="text-sm flex items-center gap-2 bg-white hover:bg-red-50 text-red-700">
+                                    Review in Calendar <ArrowRight size={16} />
                                 </Button>
                             </Link>
                         </div>
