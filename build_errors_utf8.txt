@@ -1,8 +1,0 @@
-﻿src/components/beneficiary/FileNumberImport.tsx(5,45): error TS2307: Cannot find module '@/services/beneficiaryService' or its corresponding type declarations.
-src/pages/services/ServiceHistory.tsx(9,5): error TS6133: 'Calendar' is declared but its value is never read.
-src/pages/services/ServiceHistory.tsx(32,11): error TS6133: 'navigate' is declared but its value is never read.
-src/pages/services/ServiceHistory.tsx(54,25): error TS2345: Argument of type '{ id: any; service_type: any; service_date: any; provider_name: any; venue: any; fee_charged: any; beneficiary: { name: any; file_number: any; }[]; }[]' is not assignable to parameter of type 'SetStateAction<ServiceRecord[]>'.
-  Type '{ id: any; service_type: any; service_date: any; provider_name: any; venue: any; fee_charged: any; beneficiary: { name: any; file_number: any; }[]; }[]' is not assignable to type 'ServiceRecord[]'.
-    Type '{ id: any; service_type: any; service_date: any; provider_name: any; venue: any; fee_charged: any; beneficiary: { name: any; file_number: any; }[]; }' is not assignable to type 'ServiceRecord'.
-      Types of property 'beneficiary' are incompatible.
-        Property 'name' is missing in type '{ name: any; file_number: any; }[]' but required in type '{ name: string; file_number?: string | undefined; }'.
