@@ -49,29 +49,6 @@ export interface ClinicalAssessment {
     residual_limb_condition: string | null;
     prosthesis_status: string | null;
     amp_level: string | null;
-    // Early Intervention
-    ei_head_control_status: string | null;
-    ei_head_control_goal: string | null;
-    ei_rolling_status: string | null;
-    ei_rolling_goal: string | null;
-    ei_sitting_status: string | null;
-    ei_sitting_goal: string | null;
-    ei_crawling_status: string | null;
-    ei_crawling_goal: string | null;
-    ei_standing_status: string | null;
-    ei_standing_goal: string | null;
-    ei_walking_status: string | null;
-    ei_walking_goal: string | null;
-    ei_hand_function_status: string | null;
-    ei_hand_function_goal: string | null;
-    ei_communication_status: string | null;
-    ei_communication_goal: string | null;
-    ei_social_status: string | null;
-    ei_social_goal: string | null;
-    ei_service_level: string | null;
-    ei_outcome: string | null;
-    ei_assessor_name: string | null;
-    ei_remarks: string | null;
     created_at?: string;
 }
 
@@ -100,28 +77,5 @@ export interface FollowUpAssessment {
     fim_mobility: string | null;
     // Amputation
     amp_level: string | null;
-    // Early Intervention
-    ei_head_control_status: string | null;
-    ei_head_control_goal: string | null;
-    ei_rolling_status: string | null;
-    ei_rolling_goal: string | null;
-    ei_sitting_status: string | null;
-    ei_sitting_goal: string | null;
-    ei_crawling_status: string | null;
-    ei_crawling_goal: string | null;
-    ei_standing_status: string | null;
-    ei_standing_goal: string | null;
-    ei_walking_status: string | null;
-    ei_walking_goal: string | null;
-    ei_hand_function_status: string | null;
-    ei_hand_function_goal: string | null;
-    ei_communication_status: string | null;
-    ei_communication_goal: string | null;
-    ei_social_status: string | null;
-    ei_social_goal: string | null;
-    ei_service_level: string | null;
-    ei_outcome: string | null;
-    ei_assessor_name: string | null;
-    ei_remarks: string | null;
     created_at?: string;
 }

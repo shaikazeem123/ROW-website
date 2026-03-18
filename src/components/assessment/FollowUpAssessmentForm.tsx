@@ -7,19 +7,7 @@ import { Loader } from '@/components/common/Loader';
 import { DROPDOWNS, toOptions } from '@/constants/assessmentDropdowns';
 import type { InitialAssessment, FollowUpAssessment } from '@/types/assessment';
 import { assessmentService } from '@/services/assessmentService';
-import { Calendar, ClipboardList, Plus, Save, Loader2, Edit, X, Baby } from 'lucide-react';
-
-const EI_DOMAINS = [
-    { key: 'head_control', label: 'Head Control', statusKey: 'EI_HeadControl_Status' as keyof typeof DROPDOWNS, goalKey: 'EI_HeadControl_Goal' as keyof typeof DROPDOWNS },
-    { key: 'rolling', label: 'Rolling', statusKey: 'EI_Rolling_Status' as keyof typeof DROPDOWNS, goalKey: 'EI_Rolling_Goal' as keyof typeof DROPDOWNS },
-    { key: 'sitting', label: 'Sitting', statusKey: 'EI_Sitting_Status' as keyof typeof DROPDOWNS, goalKey: 'EI_Sitting_Goal' as keyof typeof DROPDOWNS },
-    { key: 'crawling', label: 'Crawling', statusKey: 'EI_Crawling_Status' as keyof typeof DROPDOWNS, goalKey: 'EI_Crawling_Goal' as keyof typeof DROPDOWNS },
-    { key: 'standing', label: 'Standing', statusKey: 'EI_Standing_Status' as keyof typeof DROPDOWNS, goalKey: 'EI_Standing_Goal' as keyof typeof DROPDOWNS },
-    { key: 'walking', label: 'Walking', statusKey: 'EI_Walking_Status' as keyof typeof DROPDOWNS, goalKey: 'EI_Walking_Goal' as keyof typeof DROPDOWNS },
-    { key: 'hand_function', label: 'Hand Function', statusKey: 'EI_HandFunction_Status' as keyof typeof DROPDOWNS, goalKey: 'EI_HandFunction_Goal' as keyof typeof DROPDOWNS },
-    { key: 'communication', label: 'Communication', statusKey: 'EI_Communication_Status' as keyof typeof DROPDOWNS, goalKey: 'EI_Communication_Goal' as keyof typeof DROPDOWNS },
-    { key: 'social', label: 'Social', statusKey: 'EI_Social_Status' as keyof typeof DROPDOWNS, goalKey: 'EI_Social_Goal' as keyof typeof DROPDOWNS },
-] as const;
+import { Calendar, ClipboardList, Plus, Save, Loader2, Edit, X } from 'lucide-react';
 
 interface Props {
     initialData: InitialAssessment | null;
@@ -34,7 +22,6 @@ export function FollowUpAssessmentForm({ initialData }: Props) {
         );
     }
     const condition = initialData.primary_condition;
-    const isEI = condition === 'Early Intervention Assessment';
     const patientId = initialData.patient_id;
 
     const [history, setHistory] = useState<FollowUpAssessment[]>([]);
@@ -112,10 +99,8 @@ export function FollowUpAssessmentForm({ initialData }: Props) {
     const validate = (): boolean => {
         const e: Record<string, string> = {};
         if (!data.visit_date) e.visit_date = 'Visit date is required';
-        if (!isEI) {
-            if (!data.side_of_limb_affected) e.side_of_limb_affected = 'Side of limb is required';
-            if (!data.joint_involved) e.joint_involved = 'Joint is required';
-        }
+        if (!data.side_of_limb_affected) e.side_of_limb_affected = 'Side of limb is required';
+        if (!data.joint_involved) e.joint_involved = 'Joint is required';
 
         if (condition === 'Pain') {
             if (!data.rom) e.rom = 'ROM is required';
@@ -137,15 +122,6 @@ export function FollowUpAssessmentForm({ initialData }: Props) {
         }
         if (condition === 'Amputation') {
             if (!data.amp_level) e.amp_level = 'AMP level is required';
-        }
-        if (condition === 'Early Intervention Assessment') {
-            for (const domain of EI_DOMAINS) {
-                const statusField = `ei_${domain.key}_status`;
-                if (!data[statusField as keyof typeof data]) e[statusField] = `${domain.label} status is required`;
-            }
-            if (!data.ei_service_level) e.ei_service_level = 'Service level is required';
-            if (!data.ei_outcome) e.ei_outcome = 'Outcome is required';
-            if (!data.ei_assessor_name?.trim()) e.ei_assessor_name = 'Assessor name is required';
         }
 
         setErrors(e);
@@ -171,29 +147,6 @@ export function FollowUpAssessmentForm({ initialData }: Props) {
         fim_locomotion: condition === 'Disability' ? data.fim_locomotion || null : null,
         fim_mobility: condition === 'Disability' ? data.fim_mobility || null : null,
         amp_level: condition === 'Amputation' ? data.amp_level || null : null,
-        // Early Intervention
-        ei_head_control_status: isEI ? data.ei_head_control_status || null : null,
-        ei_head_control_goal: isEI ? data.ei_head_control_goal || null : null,
-        ei_rolling_status: isEI ? data.ei_rolling_status || null : null,
-        ei_rolling_goal: isEI ? data.ei_rolling_goal || null : null,
-        ei_sitting_status: isEI ? data.ei_sitting_status || null : null,
-        ei_sitting_goal: isEI ? data.ei_sitting_goal || null : null,
-        ei_crawling_status: isEI ? data.ei_crawling_status || null : null,
-        ei_crawling_goal: isEI ? data.ei_crawling_goal || null : null,
-        ei_standing_status: isEI ? data.ei_standing_status || null : null,
-        ei_standing_goal: isEI ? data.ei_standing_goal || null : null,
-        ei_walking_status: isEI ? data.ei_walking_status || null : null,
-        ei_walking_goal: isEI ? data.ei_walking_goal || null : null,
-        ei_hand_function_status: isEI ? data.ei_hand_function_status || null : null,
-        ei_hand_function_goal: isEI ? data.ei_hand_function_goal || null : null,
-        ei_communication_status: isEI ? data.ei_communication_status || null : null,
-        ei_communication_goal: isEI ? data.ei_communication_goal || null : null,
-        ei_social_status: isEI ? data.ei_social_status || null : null,
-        ei_social_goal: isEI ? data.ei_social_goal || null : null,
-        ei_service_level: isEI ? data.ei_service_level || null : null,
-        ei_outcome: isEI ? data.ei_outcome || null : null,
-        ei_assessor_name: isEI ? data.ei_assessor_name || null : null,
-        ei_remarks: isEI ? data.ei_remarks || null : null,
     });
 
     const handleSubmit = async () => {
@@ -280,13 +233,6 @@ export function FollowUpAssessmentForm({ initialData }: Props) {
                                     {condition === 'Amputation' && (
                                         <th className="text-left py-2 px-3 font-medium text-text-muted">AMP Level</th>
                                     )}
-                                    {isEI && (
-                                        <>
-                                            <th className="text-left py-2 px-3 font-medium text-text-muted">Service Level</th>
-                                            <th className="text-left py-2 px-3 font-medium text-text-muted">Outcome</th>
-                                            <th className="text-left py-2 px-3 font-medium text-text-muted">Assessor</th>
-                                        </>
-                                    )}
                                     <th className="text-right py-2 px-3 font-medium text-text-muted">Action</th>
                                 </tr>
                             </thead>
@@ -324,13 +270,6 @@ export function FollowUpAssessmentForm({ initialData }: Props) {
                                         )}
                                         {condition === 'Amputation' && (
                                             <td className="py-2 px-3">{row.amp_level || '—'}</td>
-                                        )}
-                                        {isEI && (
-                                            <>
-                                                <td className="py-2 px-3">{row.ei_service_level || '—'}</td>
-                                                <td className="py-2 px-3">{row.ei_outcome || '—'}</td>
-                                                <td className="py-2 px-3">{row.ei_assessor_name || '—'}</td>
-                                            </>
                                         )}
                                         <td className="py-2 px-3 text-right">
                                             <button
@@ -377,26 +316,22 @@ export function FollowUpAssessmentForm({ initialData }: Props) {
                             />
                             <Input label="Session No." value={String(isEditMode ? editingSession!.session_number : nextSession)} disabled />
                             <Input label="Condition" value={condition} disabled />
-                            {!isEI && (
-                                <>
-                                    <Select
-                                        label="Side of Limb"
-                                        value={data.side_of_limb_affected || ''}
-                                        onChange={e => set('side_of_limb_affected', e.target.value)}
-                                        options={toOptions(DROPDOWNS.LimbSide)}
-                                        error={errors.side_of_limb_affected}
-                                        required
-                                    />
-                                    <Select
-                                        label="Joint"
-                                        value={data.joint_involved || ''}
-                                        onChange={e => set('joint_involved', e.target.value)}
-                                        options={toOptions(DROPDOWNS.Joint)}
-                                        error={errors.joint_involved}
-                                        required
-                                    />
-                                </>
-                            )}
+                            <Select
+                                label="Side of Limb"
+                                value={data.side_of_limb_affected || ''}
+                                onChange={e => set('side_of_limb_affected', e.target.value)}
+                                options={toOptions(DROPDOWNS.LimbSide)}
+                                error={errors.side_of_limb_affected}
+                                required
+                            />
+                            <Select
+                                label="Joint"
+                                value={data.joint_involved || ''}
+                                onChange={e => set('joint_involved', e.target.value)}
+                                options={toOptions(DROPDOWNS.Joint)}
+                                error={errors.joint_involved}
+                                required
+                            />
                         </div>
                     </Card>
 
@@ -533,100 +468,6 @@ export function FollowUpAssessmentForm({ initialData }: Props) {
                                     error={errors.amp_level}
                                     required
                                 />
-                            </div>
-                        </Card>
-                    )}
-
-                    {isEI && (
-                        <Card>
-                            <div className="flex items-center gap-2 mb-5 pb-3 border-b border-gray-100">
-                                <Baby size={18} className="text-primary" />
-                                <h3 className="font-semibold text-text-main">Follow-Up — Early Intervention</h3>
-                            </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
-                                    <thead>
-                                        <tr className="bg-gray-50 border-b border-gray-200">
-                                            <th className="text-left py-3 px-4 font-semibold text-text-main w-[160px]">Domain</th>
-                                            <th className="text-left py-3 px-4 font-semibold text-text-main">Status <span className="text-red-500">*</span></th>
-                                            <th className="text-left py-3 px-4 font-semibold text-text-main">Goal</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {EI_DOMAINS.map(domain => {
-                                            const statusField = `ei_${domain.key}_status`;
-                                            const goalField = `ei_${domain.key}_goal`;
-                                            return (
-                                                <tr key={domain.key} className="border-b border-gray-100 hover:bg-gray-50/50">
-                                                    <td className="py-3 px-4 font-medium text-text-main whitespace-nowrap">{domain.label}</td>
-                                                    <td className="py-2 px-4">
-                                                        <select
-                                                            value={(data[statusField as keyof typeof data] as string) || ''}
-                                                            onChange={e => set(statusField, e.target.value)}
-                                                            className={`w-full px-2.5 py-2 border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${errors[statusField] ? 'border-red-500' : 'border-gray-300'}`}
-                                                        >
-                                                            <option value="" disabled>Select Status</option>
-                                                            {DROPDOWNS[domain.statusKey].map((opt: string) => (
-                                                                <option key={opt} value={opt}>{opt}</option>
-                                                            ))}
-                                                        </select>
-                                                        {errors[statusField] && <span className="text-xs text-red-500">{errors[statusField]}</span>}
-                                                    </td>
-                                                    <td className="py-2 px-4">
-                                                        <select
-                                                            value={(data[goalField as keyof typeof data] as string) || ''}
-                                                            onChange={e => set(goalField, e.target.value)}
-                                                            className="w-full px-2.5 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                                                        >
-                                                            <option value="" disabled>Select Goal</option>
-                                                            {DROPDOWNS[domain.goalKey].map((opt: string) => (
-                                                                <option key={opt} value={opt}>{opt}</option>
-                                                            ))}
-                                                        </select>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div className="mt-6 pt-4 border-t border-gray-100">
-                                <h4 className="font-semibold text-text-main mb-4">Summary & Outcome</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Select
-                                        label="Service Level"
-                                        value={data.ei_service_level || ''}
-                                        onChange={e => set('ei_service_level', e.target.value)}
-                                        options={toOptions(DROPDOWNS.EI_ServiceLevel)}
-                                        error={errors.ei_service_level}
-                                        required
-                                    />
-                                    <Select
-                                        label="Outcome"
-                                        value={data.ei_outcome || ''}
-                                        onChange={e => set('ei_outcome', e.target.value)}
-                                        options={toOptions(DROPDOWNS.EI_Outcome)}
-                                        error={errors.ei_outcome}
-                                        required
-                                    />
-                                    <Input
-                                        label="Assessor Name"
-                                        value={data.ei_assessor_name || ''}
-                                        onChange={e => set('ei_assessor_name', e.target.value)}
-                                        error={errors.ei_assessor_name}
-                                        required
-                                    />
-                                    <div className="flex flex-col gap-1">
-                                        <label className="text-sm font-medium text-text-main">Remarks</label>
-                                        <textarea
-                                            value={data.ei_remarks || ''}
-                                            onChange={e => set('ei_remarks', e.target.value)}
-                                            rows={3}
-                                            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
-                                            placeholder="Additional notes..."
-                                        />
-                                    </div>
-                                </div>
                             </div>
                         </Card>
                     )}

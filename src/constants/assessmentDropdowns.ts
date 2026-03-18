@@ -1,7 +1,7 @@
 export const DROPDOWNS = {
     Gender: ['Male', 'Female', 'Other'],
 
-    Condition: ['Pain', 'Neuro', 'Pulmonary', 'Post-Operative', 'Disability', 'Amputation', 'Early Intervention Assessment'],
+    Condition: ['Pain', 'Neuro', 'Pulmonary', 'Post-Operative', 'Disability', 'Amputation'],
 
     ChiefComplaint: [
         'Joint pain', 'Back pain', 'Neck pain', 'Post injury pain',
@@ -97,44 +97,6 @@ export const DROPDOWNS = {
         'K2 Limited Community Ambulator', 'K3 Community Ambulator',
         'K4 High Activity User',
     ],
-
-    // ── Early Intervention Assessment ──
-    EI_HeadControl_Status: ['Achieved', 'Delayed', 'Not Achieved'],
-    EI_HeadControl_Goal: ['Develop head control', 'Maintain head in midline', 'Improve neck strength', 'Achieve independent head control'],
-
-    EI_Rolling_Status: ['Rolls both sides', 'Rolls one side', 'Not achieved'],
-    EI_Rolling_Goal: ['Achieve rolling both sides', 'Improve trunk rotation', 'Improve segmental rolling', 'Maintain rolling ability'],
-
-    EI_Sitting_Status: ['Sits with support', 'Sits without support', 'Cannot sit'],
-    EI_Sitting_Goal: ['Achieve sitting with support', 'Achieve independent sitting', 'Improve sitting balance', 'Improve trunk control'],
-
-    EI_Crawling_Status: ['Crawls independently', 'Crawls with difficulty', 'Not crawling'],
-    EI_Crawling_Goal: ['Initiate crawling', 'Improve crawling coordination', 'Achieve independent crawling'],
-
-    EI_Standing_Status: ['Stands with support', 'Stands independently', 'Cannot stand'],
-    EI_Standing_Goal: ['Achieve supported standing', 'Achieve independent standing', 'Improve weight bearing', 'Improve postural stability'],
-
-    EI_Walking_Status: ['Walks independently', 'Walks with support', 'Not walking'],
-    EI_Walking_Goal: ['Initiate walking', 'Improve walking balance', 'Achieve independent walking', 'Improve gait pattern'],
-
-    EI_HandFunction_Status: ['Normal grasp', 'Delayed grasp', 'Poor hand control'],
-    EI_HandFunction_Goal: ['Improve hand grasp', 'Improve bilateral hand use', 'Improve hand coordination', 'Develop pincer grasp'],
-
-    EI_Communication_Status: ['Cooing', 'Babbling', 'Single words', 'Delayed speech'],
-    EI_Communication_Goal: ['Increase vocalization', 'Increase single word use', 'Improve expressive language', 'Improve communication intent'],
-
-    EI_Social_Status: ['Normal interaction', 'Limited interaction', 'Poor response'],
-    EI_Social_Goal: ['Improve eye contact', 'Increase social interaction', 'Improve response to caregiver', 'Increase participation in play'],
-
-    EI_ServiceLevel: [
-        'Level 1 – Daily Service',
-        'Level 2 – 3–4 times per month',
-        'Level 3 – Once in 15 days',
-        'Level 4 – Once in 6 months',
-        'Level 5 – Referral',
-    ],
-
-    EI_Outcome: ['Improved', 'Slight Improvement', 'No Change', 'Needs Referral'],
 };
 
 /** Convert a string array to {value, label} options for the Select component */
