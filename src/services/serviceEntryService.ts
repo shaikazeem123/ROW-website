@@ -20,7 +20,6 @@ export const ServiceEntryService = {
                 outcome: null,
                 outcome_description: null,
                 receipt_no: null,
-                custom_field2: null,
                 custom_field4: null,
                 custom_field5: null,
                 remarks: null

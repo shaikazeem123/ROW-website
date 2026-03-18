@@ -18,6 +18,9 @@ import { SettingsPage } from '../pages/settings/Settings';
 import { SyncDashboardPage } from '../pages/admin/SyncDashboard';
 import { AdminControlPage } from '../pages/admin/AdminControl';
 import { TokenManagementPage } from '../pages/tokens/TokenManagement';
+import { AssessmentEntryPage } from '../pages/assessment/AssessmentEntry';
+import { AssessmentHistoryPage } from '../pages/assessment/AssessmentHistory';
+import { AssessmentViewPage } from '../pages/assessment/AssessmentView';
 import { NotFoundPage } from '../pages/NotFound';
 import { ProtectedRoute } from './ProtectedRoute';
 
@@ -93,6 +96,22 @@ export const router = createBrowserRouter([
                     {
                         path: 'services/history',
                         element: <ServiceHistoryPage />,
+                    },
+                    {
+                        path: 'assessments/new',
+                        element: <AssessmentEntryPage />,
+                    },
+                    {
+                        path: 'assessments/history',
+                        element: <AssessmentHistoryPage />,
+                    },
+                    {
+                        path: 'assessments/view/:patientId',
+                        element: <AssessmentViewPage />,
+                    },
+                    {
+                        path: 'assessments/edit/:patientId',
+                        element: <AssessmentEntryPage />,
                     },
                     {
                         path: 'reports',

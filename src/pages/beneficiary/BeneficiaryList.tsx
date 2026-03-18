@@ -22,6 +22,8 @@ export function BeneficiaryListPage() {
     const [beneficiaries, setBeneficiaries] = useState<BeneficiaryItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -142,11 +144,21 @@ export function BeneficiaryListPage() {
         exportBeneficiariesToExcel(filteredBeneficiaries);
     };
 
-    const filteredBeneficiaries = beneficiaries.filter(b =>
-        (b.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        b.mobile_no?.includes(searchTerm) ||
-        (b.file_number || '').toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredBeneficiaries = beneficiaries.filter(b => {
+        const matchesSearch = (b.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            b.mobile_no?.includes(searchTerm) ||
+            (b.file_number || '').toLowerCase().includes(searchTerm.toLowerCase());
+
+        let matchesDate = true;
+        if (startDate && b.date_of_registration) {
+            matchesDate = matchesDate && (b.date_of_registration >= startDate);
+        }
+        if (endDate && b.date_of_registration) {
+            matchesDate = matchesDate && (b.date_of_registration <= endDate);
+        }
+
+        return matchesSearch && matchesDate;
+    });
 
     return (
         <div className="space-y-6">
@@ -201,29 +213,61 @@ export function BeneficiaryListPage() {
             />
 
             <Card className="p-4">
-                <div className="flex items-center justify-between gap-4 mb-6">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={20} />
-                        <input
-                            type="text"
-                            placeholder="Search by name, mobile, or file number..."
-                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
+                <div className="flex flex-col md:flex-row items-end md:items-center justify-between gap-4 mb-6">
+                    <div className="flex flex-col md:flex-row flex-1 w-full gap-4">
+                        <div className="relative flex-[2]">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={20} />
+                            <input
+                                type="text"
+                                placeholder="Search by name, mobile, or file number..."
+                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex flex-1 gap-2 w-full md:w-auto">
+                            <div className="flex-1">
+                                <label className="block text-[10px] uppercase font-bold text-text-muted mb-1 ml-1">From Date</label>
+                                <input
+                                    type="date"
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <label className="block text-[10px] uppercase font-bold text-text-muted mb-1 ml-1">To Date</label>
+                                <input
+                                    type="date"
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                />
+                            </div>
+                        </div>
                     </div>
-                    {filteredBeneficiaries.length > 0 && (
-                        <button
-                            onClick={toggleSelectAll}
-                            className="flex items-center gap-2 text-sm font-medium text-text-muted hover:text-primary transition-colors px-3 py-2 bg-gray-50 rounded-lg"
-                        >
-                            {selectedIds.length === filteredBeneficiaries.length && selectedIds.length > 0 ? (
-                                <><CheckSquare size={18} className="text-primary" /> Unselect All</>
-                            ) : (
-                                <><Square size={18} /> Select All</>
-                            )}
-                        </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                        {(startDate || endDate) && (
+                            <button
+                                onClick={() => { setStartDate(''); setEndDate(''); }}
+                                className="text-xs font-bold text-red-500 hover:text-red-600 px-3 py-2 bg-red-50 rounded-lg transition-colors border border-red-100"
+                            >
+                                Clear Dates
+                            </button>
+                        )}
+                        {filteredBeneficiaries.length > 0 && (
+                            <button
+                                onClick={toggleSelectAll}
+                                className="flex items-center gap-2 text-sm font-medium text-text-muted hover:text-primary transition-colors px-3 py-2 bg-gray-50 rounded-lg border border-gray-100"
+                            >
+                                {selectedIds.length === filteredBeneficiaries.length && selectedIds.length > 0 ? (
+                                    <><CheckSquare size={18} className="text-primary" /> Unselect All</>
+                                ) : (
+                                    <><Square size={18} /> Select All</>
+                                )}
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {isLoading ? (

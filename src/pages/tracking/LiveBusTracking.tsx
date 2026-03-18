@@ -8,7 +8,8 @@ import {
     Fuel,
     Calendar,
     BarChart3,
-    Download
+    Download,
+    Zap
 } from 'lucide-react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -141,6 +142,9 @@ export function LiveBusTrackingPage() {
                 fuelLiters: t.fuel_liters,
                 fuelCost: t.fuel_cost,
                 fuelEfficiency: t.fuel_efficiency,
+                generatorStartReading: t.generator_start_reading,
+                generatorEndReading: t.generator_end_reading,
+                generatorUnitsUsed: t.generator_units_used,
                 notes: t.notes,
                 createdAt: t.created_at,
                 createdBy: t.created_by,
@@ -353,6 +357,31 @@ export function LiveBusTrackingPage() {
                     </div>
                     <p className="text-xs text-text-muted mt-2">
                         Cost: ₹{stats.totalFuelCost.toLocaleString()}
+                    </p>
+                </Card>
+
+                <Card className="p-4 border-l-4 border-l-yellow-500">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="text-sm font-medium text-text-muted mb-1">Generator Records</p>
+                            <h3 className="text-2xl font-bold text-text-main">
+                                {(() => {
+                                    const filtered = getFilteredTrips();
+                                    const tripsWithGen = filtered.filter(t => t.generatorUnitsUsed && t.generatorUnitsUsed > 0);
+                                    return tripsWithGen.length;
+                                })()}
+                            </h3>
+                        </div>
+                        <div className="p-2 rounded-lg bg-yellow-50">
+                            <Zap className="w-5 h-5 text-yellow-600" />
+                        </div>
+                    </div>
+                    <p className="text-xs text-text-muted mt-2">
+                        Total: {(() => {
+                            const filtered = getFilteredTrips();
+                            const total = filtered.reduce((sum, t) => sum + (t.generatorUnitsUsed || 0), 0);
+                            return total > 0 ? `${total.toFixed(1)} units` : 'No data';
+                        })()} used
                     </p>
                 </Card>
             </div>

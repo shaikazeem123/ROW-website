@@ -9,18 +9,19 @@ import { Select } from '@/components/common/Select';
 import { BeneficiarySelect } from '@/components/beneficiary/BeneficiarySelect';
 import { SERVICE_MASTER, LOCATION_MASTER, MODE_OF_SERVICE } from '@/data/masters';
 import { ServiceEntryService } from '@/services/serviceEntryService';
-import type { ServiceEntry } from '@/types/serviceEntry';
+import type { ServiceEntry, ServiceEntryPayload } from '@/types/serviceEntry';
 import { usePermissions } from '@/hooks/usePermissions';
 
 export function ServiceEntryPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { userRole } = usePermissions();
-    const isAdmin = userRole === 'Admin';
+    const { role } = usePermissions();
+    const isAdmin = role === 'Admin';
 
     const [isLoading, setIsLoading] = useState(!!id);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [followUpOptions, setFollowUpOptions] = useState<{ value: string; label: string }[]>([]);
 
     const [formData, setFormData] = useState<Partial<ServiceEntry>>({
         status: 'SCHEDULED',
@@ -52,7 +53,7 @@ export function ServiceEntryPage() {
                 try {
                     const data = await ServiceEntryService.getEntryById(id);
                     setFormData(data);
-                } catch (err: any) {
+                } catch {
                     setError('Failed to load service entry');
                 } finally {
                     setIsLoading(false);
@@ -62,7 +63,45 @@ export function ServiceEntryPage() {
         }
     }, [id]);
 
-    const handleChange = (name: string, value: any) => {
+    useEffect(() => {
+        const fetchHistoryAndGenerateOptions = async () => {
+            if (!formData.file_number) {
+                setFollowUpOptions([]);
+                return;
+            }
+
+            try {
+                // Fixed options as requested by user
+                const options: { value: string; label: string }[] = [
+                    { value: 'Initial Visit', label: 'Initial Visit' },
+                    { value: 'follow up 1', label: 'follow up 1' },
+                    { value: 'followup 2', label: 'followup 2' },
+                    { value: 'followup 3', label: 'followup 3' },
+                    { value: 'followup 4', label: 'followup 4' }
+                ];
+
+                setFollowUpOptions(options);
+
+                // Auto-select the first follow-up if none is selected and it's a new entry
+                if (!formData.custom_field2 && !id) {
+                    setFormData(prev => ({ ...prev, custom_field2: 'Initial Visit' }));
+                }
+            } catch (err) {
+                console.error('Error setting follow-up options:', err);
+                setFollowUpOptions([
+                    { value: 'Initial Visit', label: 'Initial Visit' },
+                    { value: 'follow up 1', label: 'follow up 1' },
+                    { value: 'followup 2', label: 'followup 2' },
+                    { value: 'followup 3', label: 'followup 3' },
+                    { value: 'followup 4', label: 'followup 4' }
+                ]);
+            }
+        };
+
+        fetchHistoryAndGenerateOptions();
+    }, [formData.file_number, formData.custom_field2, id]);
+
+    const handleChange = (name: string, value: string | number | null) => {
         setFormData(prev => ({ ...prev, [name]: value }));
         setError(null);
     };
@@ -77,6 +116,7 @@ export function ServiceEntryPage() {
         if (!formData.service_provider_code) { setError('Service Provider Code is mandatory'); return false; }
         if ((formData.total_hours || 0) <= 0) { setError('Total Hours must be greater than 0'); return false; }
         if (!formData.mode_of_service) { setError('Mode of Service is mandatory'); return false; }
+        if (!formData.custom_field2) { setError('Follow-up Number is mandatory'); return false; }
 
         if (formData.status === 'AVAILED' && !formData.end_date) {
             setError('End Date is mandatory when status is AVAILED');
@@ -108,13 +148,13 @@ export function ServiceEntryPage() {
                 await ServiceEntryService.updateEntry(id, formData);
                 alert('Service entry updated successfully!');
             } else {
-                await ServiceEntryService.createEntry(formData as any);
+                await ServiceEntryService.createEntry(formData as ServiceEntryPayload);
                 alert('Service entry saved successfully!');
             }
             navigate('/services/history');
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Save error:', err);
-            setError(err.message || 'Failed to save service entry');
+            setError(err instanceof Error ? err.message : 'Failed to save service entry');
         } finally {
             setIsSaving(false);
         }
@@ -229,6 +269,21 @@ export function ServiceEntryPage() {
                                         { value: '', label: '-- Select Location --' },
                                         ...LOCATION_MASTER.map(l => ({ value: l.code, label: `${l.code} - ${l.name}` }))
                                     ]}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <Select
+                                    label="Follow-up Number"
+                                    name="custom_field2"
+                                    value={formData.custom_field2 || ''}
+                                    onChange={(e) => handleChange('custom_field2', e.target.value)}
+                                    required
+                                    options={[
+                                        { value: '', label: '-- Select Follow-up --' },
+                                        ...followUpOptions
+                                    ]}
+                                    disabled={!formData.file_number}
                                 />
                             </div>
 
@@ -349,12 +404,7 @@ export function ServiceEntryPage() {
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <Input
-                                        label="Custom Field 2"
-                                        name="custom_field2"
-                                        value={formData.custom_field2 || ''}
-                                        onChange={(e) => handleChange('custom_field2', e.target.value)}
-                                    />
+
                                     <Input
                                         label="Custom Field 4"
                                         name="custom_field4"

@@ -36,6 +36,11 @@ export interface Trip {
     fuelCost?: number;
     fuelEfficiency?: number; // km/L
 
+    // Generator
+    generatorStartReading?: number;
+    generatorEndReading?: number;
+    generatorUnitsUsed?: number; // End - Start
+
     // Additional
     notes?: string;
     stopsOrDelays?: string;

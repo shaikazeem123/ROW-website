@@ -1,10 +1,16 @@
+import { useState, useEffect, useRef } from 'react';
 import {
     ChevronLeft,
     ChevronRight,
-    LogOut
+    LogOut,
+    Search,
+    User,
+    X
 } from 'lucide-react';
 import { SidebarMenu } from '../navigation/SidebarMenu';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
+import { useNavigate } from 'react-router-dom';
 
 interface SidebarProps {
     collapsed: boolean;
@@ -25,6 +31,45 @@ interface SidebarContentProps {
 }
 
 function SidebarContent({ collapsed, mobileOpen, onMobileClose, onToggleCollapse, logout, userInitials, userEmail, userName }: SidebarContentProps) {
+    const navigate = useNavigate();
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<{ id: string; name: string; file_number: string }[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const searchRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+                setIsSearching(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleSearch = async (query: string) => {
+        setSearchQuery(query);
+        if (query.trim().length < 2) {
+            setSearchResults([]);
+            setIsSearching(false);
+            return;
+        }
+
+        try {
+            const { data, error } = await supabase
+                .from('beneficiaries')
+                .select('id, name, file_number')
+                .or(`name.ilike.%${query}%,file_number.ilike.%${query}%`)
+                .limit(5);
+
+            if (error) throw error;
+            setSearchResults(data || []);
+            setIsSearching(true);
+        } catch (err) {
+            console.error('Search error:', err);
+        }
+    };
+
     return (
         <div className="flex flex-col h-full bg-surface">
             <div className={`h-16 flex items-center border-b border-gray-100 ${collapsed ? 'justify-center' : 'px-6 justify-between'}`}>
@@ -34,6 +79,69 @@ function SidebarContent({ collapsed, mobileOpen, onMobileClose, onToggleCollapse
                     <ChevronLeft size={20} />
                 </button>
             </div>
+
+            {/* Global Search Section */}
+            {!collapsed && (
+                <div className="px-4 py-4 relative" ref={searchRef}>
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
+                        <input
+                            type="text"
+                            placeholder="Search Patient / File No..."
+                            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                            value={searchQuery}
+                            onChange={(e) => handleSearch(e.target.value)}
+                            onFocus={() => searchQuery.length >= 2 && setIsSearching(true)}
+                        />
+                        {searchQuery && (
+                            <button
+                                onClick={() => { setSearchQuery(''); setSearchResults([]); setIsSearching(false); }}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-main"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Search Results Dropdown */}
+                    {isSearching && searchResults.length > 0 && (
+                        <div className="absolute left-4 right-4 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                            {searchResults.map((b) => (
+                                <button
+                                    key={b.id}
+                                    onClick={() => {
+                                        navigate(`/beneficiary/profile/${b.id}`);
+                                        setIsSearching(false);
+                                        setSearchQuery('');
+                                        if (mobileOpen) onMobileClose();
+                                    }}
+                                    className="w-full text-left px-4 py-3 hover:bg-primary/5 flex items-center gap-3 border-b border-gray-50 last:border-0 transition-colors"
+                                >
+                                    <div className="p-2 bg-gray-100 rounded-lg text-gray-500">
+                                        <User size={14} />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-text-main truncate">{b.name}</p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-[10px] text-text-muted font-black uppercase tracking-widest">{b.file_number || 'No File No'}</p>
+                                        </div>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+            {collapsed && (
+                <div className="flex justify-center py-4">
+                    <button
+                        onClick={() => onToggleCollapse()}
+                        className="p-2 bg-gray-50 rounded-xl text-text-muted hover:text-primary transition-colors"
+                    >
+                        <Search size={20} />
+                    </button>
+                </div>
+            )}
 
             <SidebarMenu collapsed={collapsed} mobileOpen={mobileOpen} onMobileClose={onMobileClose} />
 

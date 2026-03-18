@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Bus, Save, Calculator, MapPin, Clock, Fuel, Edit2, CheckCircle } from 'lucide-react';
+import { Bus, Save, Calculator, MapPin, Clock, Fuel, Edit2, CheckCircle, Zap } from 'lucide-react';
 import { Card } from '@/components/common/Card';
 import { Input } from '@/components/common/Input';
 import { Select } from '@/components/common/Select';
@@ -31,6 +31,8 @@ export function TripEntryPage() {
         beneficiariesServed: '0',
         fuelLiters: '',
         fuelCost: '',
+        generatorStart: '',
+        generatorEnd: '',
         notes: '',
     });
 
@@ -38,6 +40,7 @@ export function TripEntryPage() {
         distance: 0,
         duration: 0,
         fuelEfficiency: 0,
+        generatorUnitsUsed: 0,
     });
 
     const [isCalculating, setIsCalculating] = useState(false);
@@ -74,12 +77,15 @@ export function TripEntryPage() {
                         beneficiariesServed: tripToEdit.beneficiaries_served?.toString() || '0',
                         fuelLiters: tripToEdit.fuel_liters?.toString() || '',
                         fuelCost: tripToEdit.fuel_cost?.toString() || '',
+                        generatorStart: tripToEdit.generator_start_reading?.toString() || '',
+                        generatorEnd: tripToEdit.generator_end_reading?.toString() || '',
                         notes: tripToEdit.notes || '',
                     });
                     setCalculatedData({
                         distance: tripToEdit.final_distance,
                         duration: tripToEdit.duration_hours,
                         fuelEfficiency: tripToEdit.fuel_efficiency || 0,
+                        generatorUnitsUsed: tripToEdit.generator_units_used || 0,
                     });
                 }
             }
@@ -212,6 +218,17 @@ export function TripEntryPage() {
         }
     }, [calculatedData.distance, formData.fuelLiters]);
 
+    // Auto-calculate generator units used
+    useEffect(() => {
+        const start = parseFloat(formData.generatorStart);
+        const end = parseFloat(formData.generatorEnd);
+        if (!isNaN(start) && !isNaN(end) && end > start) {
+            setCalculatedData(prev => ({ ...prev, generatorUnitsUsed: parseFloat((end - start).toFixed(2)) }));
+        } else {
+            setCalculatedData(prev => ({ ...prev, generatorUnitsUsed: 0 }));
+        }
+    }, [formData.generatorStart, formData.generatorEnd]);
+
 
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -245,6 +262,9 @@ export function TripEntryPage() {
             fuel_liters: formData.fuelLiters ? parseFloat(formData.fuelLiters) : null,
             fuel_cost: formData.fuelCost ? parseFloat(formData.fuelCost) : null,
             fuel_efficiency: calculatedData.fuelEfficiency || null,
+            generator_start_reading: formData.generatorStart ? parseFloat(formData.generatorStart) : null,
+            generator_end_reading: formData.generatorEnd ? parseFloat(formData.generatorEnd) : null,
+            generator_units_used: calculatedData.generatorUnitsUsed || null,
             notes: formData.notes || null,
             created_by: user.id
         };
@@ -498,6 +518,42 @@ export function TripEntryPage() {
                                     <p className="text-xs text-gray-600 mb-1">Fuel Efficiency</p>
                                     <p className="text-xl font-semibold text-gray-900">
                                         {calculatedData.fuelEfficiency > 0 ? `${calculatedData.fuelEfficiency} km/L` : 'N/A'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Generator Meter */}
+                    <div>
+                        <h3 className="text-lg font-semibold text-primary mb-4 border-b border-gray-100 pb-2 flex items-center gap-2">
+                            <Zap size={20} />
+                            Generator Meter
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <Input
+                                label="Generator Start Reading"
+                                name="generatorStart"
+                                type="number"
+                                step="0.01"
+                                value={formData.generatorStart}
+                                onChange={handleChange}
+                                placeholder="e.g. 1520.5"
+                            />
+                            <Input
+                                label="Generator End Reading"
+                                name="generatorEnd"
+                                type="number"
+                                step="0.01"
+                                value={formData.generatorEnd}
+                                onChange={handleChange}
+                                placeholder="e.g. 1528.3"
+                            />
+                            <div className="flex items-end">
+                                <div className="w-full p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                                    <p className="text-xs text-yellow-700 mb-1">Units Used</p>
+                                    <p className="text-xl font-semibold text-yellow-900">
+                                        {calculatedData.generatorUnitsUsed > 0 ? `${calculatedData.generatorUnitsUsed} units` : 'N/A'}
                                     </p>
                                 </div>
                             </div>

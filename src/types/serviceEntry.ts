@@ -37,5 +37,6 @@ export type ServiceEntryPayload = Pick<ServiceEntry,
     'service_code' |
     'service_provider_code' |
     'total_hours' |
-    'mode_of_service'
+    'mode_of_service' |
+    'custom_field2'
 >;

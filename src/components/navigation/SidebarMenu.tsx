@@ -10,6 +10,8 @@ import {
     Settings,
     RefreshCw,
     Ticket,
+    Shield,
+    ClipboardList,
 } from 'lucide-react';
 import { NavItem } from './NavItem';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -22,9 +24,12 @@ const navItems = [
     { path: '/beneficiary/list', label: 'Beneficiary List', icon: Users },
     { path: '/services/new', label: 'Service Entry', icon: Stethoscope },
     { path: '/services/history', label: 'Service History', icon: History },
+    { path: '/assessments/new', label: 'Assessment Entry', icon: ClipboardList },
+    { path: '/assessments/history', label: 'Assessment History', icon: History },
     { path: '/reports', label: 'Reports & Analytics', icon: BarChart3 },
     { path: '/token-management', label: 'Token Management', icon: Ticket },
     { path: '/sync', label: 'Sync Control', icon: RefreshCw },
+    { path: '/admin/control', label: 'Admin Control', icon: Shield },
     { path: '/settings', label: 'Settings & Admin', icon: Settings },
 ];
 
@@ -43,9 +48,10 @@ export function SidebarMenu({ collapsed, mobileOpen, onMobileClose }: SidebarMen
         if (item.path === '/tracking') return hasPageAccess('dashboard');
         if (item.path.startsWith('/beneficiary')) return hasPageAccess('beneficiary');
         if (item.path.startsWith('/services')) return hasPageAccess('services');
+        if (item.path.startsWith('/assessments')) return hasPageAccess('assessments');
         if (item.path === '/reports') return hasPageAccess('reports');
         if (item.path === '/token-management') return hasPageAccess('token-management');
-        if (item.path === '/sync') return hasPageAccess('admin'); // Only Admin
+        if (item.path === '/sync' || item.path === '/admin/control') return hasPageAccess('admin');
         if (item.path === '/settings') return hasPageAccess('settings');
         return true;
     });

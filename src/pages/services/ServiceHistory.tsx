@@ -54,7 +54,7 @@ export function ServiceHistoryPage() {
 
             const fileNumbers = Array.from(new Set(entries.map(e => e.file_number))).filter(Boolean);
 
-            let bMap = new Map<string, string>();
+            const bMap = new Map<string, string>();
             if (fileNumbers.length > 0) {
                 const { data: beneficiaries, error: bError } = await supabase
                     .from('beneficiaries')
