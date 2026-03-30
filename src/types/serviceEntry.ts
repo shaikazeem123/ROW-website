@@ -2,7 +2,7 @@
 export interface ServiceEntry {
     id: string;
     status: 'SCHEDULED' | 'AVAILED';
-    file_number: string;
+    file_number: string | null;
     schedule_date: string;
     start_date: string;
     end_date: string | null;

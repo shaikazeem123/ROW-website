@@ -24,7 +24,10 @@ interface Service {
     provider_name?: string;
     venue?: string;
     notes?: string;
-    fee_charged?: number;
+    total_hours?: number;
+    status?: string;
+    mode_of_service?: string;
+    follow_up?: string;
 }
 
 export function BeneficiaryProfilePage() {
@@ -47,17 +50,17 @@ export function BeneficiaryProfilePage() {
             if (bError) throw bError;
             setBeneficiary(bData);
 
-            // Fetch service history from service_entries using file_number
-            if (bData.file_number) {
+            // Fetch service history from service_entries using file_number or beneficiary name
+            const searchValues = [bData.file_number, bData.name].filter(Boolean);
+            if (searchValues.length > 0) {
                 const { data: sData, error: sError } = await supabase
                     .from('service_entries')
                     .select('*')
-                    .eq('file_number', bData.file_number)
+                    .in('file_number', searchValues)
                     .order('schedule_date', { ascending: false });
 
                 if (sError) throw sError;
 
-                // Map to the Service interface used in this component
                 const mappedServices: Service[] = (sData as ServiceEntry[] || []).map((s) => ({
                     id: s.id,
                     service_type: s.service_code,
@@ -65,7 +68,10 @@ export function BeneficiaryProfilePage() {
                     provider_name: s.service_provider_code,
                     venue: s.location_code,
                     notes: s.remarks || undefined,
-                    fee_charged: s.total_hours // Just an example, maybe fee is internal now
+                    total_hours: s.total_hours,
+                    status: s.status,
+                    mode_of_service: s.mode_of_service,
+                    follow_up: s.custom_field2 || undefined,
                 }));
                 setServices(mappedServices);
             }
@@ -270,21 +276,32 @@ export function BeneficiaryProfilePage() {
                                             {/* Dot */}
                                             <div className="absolute left-[13px] top-1.5 w-2 h-2 rounded-full bg-primary border-4 border-white ring-1 ring-primary/20"></div>
 
-                                            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 p-4 bg-gray-50 rounded-xl hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-100 transition-all">
+                                            <div
+                                                onClick={() => navigate(`/services/edit/${service.id}`)}
+                                                className="flex flex-col md:flex-row md:items-start justify-between gap-4 p-4 bg-gray-50 rounded-xl hover:bg-white hover:shadow-md border border-transparent hover:border-primary/20 transition-all cursor-pointer group"
+                                            >
                                                 <div className="space-y-2">
-                                                    <div className="flex items-center gap-3">
-                                                        <span className="text-xs text-primary font-bold bg-primary/5 px-2 py-0.5 rounded uppercase tracking-wider">
+                                                    <div className="flex items-center gap-3 flex-wrap">
+                                                        <span className="text-xs text-primary font-bold bg-primary/5 px-2 py-0.5 rounded uppercase tracking-wider group-hover:bg-primary/10">
                                                             {service.service_type}
                                                         </span>
+                                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded tracking-wider ${service.status === 'AVAILED' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                            {service.status}
+                                                        </span>
+                                                        {service.follow_up && (
+                                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-600 tracking-wider">
+                                                                {service.follow_up}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-4 flex-wrap">
                                                         <span className="text-sm text-text-muted flex items-center gap-1">
                                                             <Calendar size={14} />
-                                                            {new Date(service.service_date).toLocaleDateString()}
+                                                            {new Date(service.service_date).toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' })}
                                                         </span>
-                                                    </div>
-                                                    <div className="flex items-center gap-4">
                                                         <div className="flex items-center gap-1 text-sm text-text-main font-medium">
                                                             <Stethoscope size={16} className="text-text-muted" />
-                                                            {service.provider_name || 'Anonymous Provider'}
+                                                            {service.provider_name || 'Provider N/A'}
                                                         </div>
                                                         <div className="flex items-center gap-1 text-sm text-text-muted">
                                                             <MapPin size={16} />
@@ -297,12 +314,13 @@ export function BeneficiaryProfilePage() {
                                                         </p>
                                                     )}
                                                 </div>
-                                                <div className="text-right">
-                                                    <div className="text-lg font-bold text-text-main">
-                                                        ₹{service.fee_charged?.toLocaleString() || '0'}
+                                                <div className="text-right shrink-0">
+                                                    <div className="flex items-center gap-1 text-lg font-bold text-text-main">
+                                                        <Clock size={16} className="text-primary" />
+                                                        {service.total_hours || 0}h
                                                     </div>
-                                                    <div className="text-[10px] text-text-muted uppercase font-bold tracking-widest mt-1">
-                                                        Paid Status: Success
+                                                    <div className="text-[10px] text-primary/60 font-bold bg-primary/5 px-1.5 py-0.5 rounded mt-1">
+                                                        {service.mode_of_service || 'ROW'}
                                                     </div>
                                                 </div>
                                             </div>

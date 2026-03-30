@@ -14,7 +14,9 @@ import {
     Users,
     ShieldCheck,
     History as HistoryIcon,
-    Edit
+    Edit,
+    Trash2,
+    Loader2,
 } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import ExcelJS from 'exceljs';
@@ -36,6 +38,7 @@ export function ServiceHistoryPage() {
     const navigate = useNavigate();
     const { role } = usePermissions();
     const isAdmin = role === 'Admin';
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
     const fetchHistory = useCallback(async () => {
         setIsLoading(true);
@@ -145,6 +148,28 @@ export function ServiceHistoryPage() {
         anchor.download = `Service_History_Audit_${new Date().toISOString().split('T')[0]}.xlsx`;
         anchor.click();
         window.URL.revokeObjectURL(url);
+    };
+
+    const handleDelete = async (service: ExtendedServiceRecord) => {
+        const name = service.beneficiary?.name || service.file_number;
+        const date = new Date(service.schedule_date).toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' });
+        if (!confirm(`Delete service entry for "${name}" on ${date}?\n\nService: ${service.service_code}\nThis action cannot be undone.`)) return;
+
+        setDeletingId(service.id);
+        try {
+            const { error } = await supabase
+                .from('service_entries')
+                .delete()
+                .eq('id', service.id);
+
+            if (error) throw error;
+            setServices(prev => prev.filter(s => s.id !== service.id));
+        } catch (err) {
+            console.error('Delete service error:', err);
+            alert('Failed to delete service entry. Please try again.');
+        } finally {
+            setDeletingId(null);
+        }
     };
 
     return (
@@ -330,13 +355,26 @@ export function ServiceHistoryPage() {
                                         </td>
                                         {isAdmin && (
                                             <td className="py-5 pr-4 text-right">
-                                                <Button
-                                                    variant="secondary"
-                                                    className="h-8 px-2 flex items-center gap-1.5 text-[11px] bg-blue-50 text-blue-600 border-none hover:bg-blue-100"
-                                                    onClick={() => navigate(`/services/edit/${service.id}`)}
-                                                >
-                                                    <Edit size={14} /> Edit
-                                                </Button>
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <Button
+                                                        variant="secondary"
+                                                        className="h-8 px-2 flex items-center gap-1.5 text-[11px] bg-blue-50 text-blue-600 border-none hover:bg-blue-100"
+                                                        onClick={() => navigate(`/services/edit/${service.id}`)}
+                                                    >
+                                                        <Edit size={14} /> Edit
+                                                    </Button>
+                                                    <Button
+                                                        variant="secondary"
+                                                        className="h-8 px-2 flex items-center gap-1.5 text-[11px] bg-red-50 text-red-600 border-none hover:bg-red-100"
+                                                        onClick={() => handleDelete(service)}
+                                                        disabled={deletingId === service.id}
+                                                    >
+                                                        {deletingId === service.id
+                                                            ? <Loader2 size={14} className="animate-spin" />
+                                                            : <Trash2 size={14} />}
+                                                        Delete
+                                                    </Button>
+                                                </div>
                                             </td>
                                         )}
                                     </tr>

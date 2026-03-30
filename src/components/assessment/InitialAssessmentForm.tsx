@@ -113,6 +113,8 @@ export function InitialAssessmentForm({ data, onChange, onSaved, isEdit }: Props
         if (errors[field]) setErrors(prev => { const n = { ...prev }; delete n[field]; return n; });
     };
 
+    const isEI = data.primary_condition === 'Early Intervention Assessment';
+
     const validate = (): boolean => {
         const e: Record<string, string> = {};
         if (!data.patient_id?.trim()) e.patient_id = 'Patient ID is required';
@@ -123,9 +125,11 @@ export function InitialAssessmentForm({ data, onChange, onSaved, isEdit }: Props
         if (!data.phone || !/^\d{10}$/.test(data.phone)) e.phone = 'Enter a valid 10-digit phone number';
         if (!data.village?.trim()) e.village = 'Village is required';
         if (!data.primary_condition) e.primary_condition = 'Primary condition is required';
-        if (!data.chief_complaint) e.chief_complaint = 'Chief complaint is required';
-        if (!data.side_of_limb_affected) e.side_of_limb_affected = 'Side of limb is required';
-        if (!data.joint_involved) e.joint_involved = 'Joint involved is required';
+        if (!isEI) {
+            if (!data.chief_complaint) e.chief_complaint = 'Chief complaint is required';
+            if (!data.side_of_limb_affected) e.side_of_limb_affected = 'Side of limb is required';
+            if (!data.joint_involved) e.joint_involved = 'Joint involved is required';
+        }
         if (!data.document_type) e.document_type = 'Document type is required';
         setErrors(e);
         return Object.keys(e).length === 0;
@@ -144,9 +148,9 @@ export function InitialAssessmentForm({ data, onChange, onSaved, isEdit }: Props
                 phone: data.phone!,
                 village: data.village!,
                 primary_condition: data.primary_condition!,
-                chief_complaint: data.chief_complaint!,
-                side_of_limb_affected: data.side_of_limb_affected!,
-                joint_involved: data.joint_involved!,
+                chief_complaint: isEI ? 'N/A' : data.chief_complaint!,
+                side_of_limb_affected: isEI ? 'N/A' : data.side_of_limb_affected!,
+                joint_involved: isEI ? 'N/A' : data.joint_involved!,
                 document_type: data.document_type!,
             };
             const result = isEdit
@@ -154,7 +158,9 @@ export function InitialAssessmentForm({ data, onChange, onSaved, isEdit }: Props
                 : await assessmentService.createInitial(payload);
             onSaved(result);
         } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : 'Failed to save';
+            const msg = err instanceof Error ? err.message
+                : (err && typeof err === 'object' && 'message' in err) ? String((err as { message: string }).message)
+                : 'Failed to save';
             setErrors({ _form: msg });
         } finally {
             setIsSaving(false);
@@ -285,30 +291,34 @@ export function InitialAssessmentForm({ data, onChange, onSaved, isEdit }: Props
                         />
                         <p className="text-xs text-text-muted mt-1">This controls which fields appear in Clinical Assessment</p>
                     </div>
-                    <Select
-                        label="Chief Complaint"
-                        value={data.chief_complaint || ''}
-                        onChange={e => set('chief_complaint', e.target.value)}
-                        options={toOptions(DROPDOWNS.ChiefComplaint)}
-                        error={errors.chief_complaint}
-                        required
-                    />
-                    <Select
-                        label="Side of Limb Affected"
-                        value={data.side_of_limb_affected || ''}
-                        onChange={e => set('side_of_limb_affected', e.target.value)}
-                        options={toOptions(DROPDOWNS.LimbSide)}
-                        error={errors.side_of_limb_affected}
-                        required
-                    />
-                    <Select
-                        label="Joint Involved"
-                        value={data.joint_involved || ''}
-                        onChange={e => set('joint_involved', e.target.value)}
-                        options={toOptions(DROPDOWNS.Joint)}
-                        error={errors.joint_involved}
-                        required
-                    />
+                    {!isEI && (
+                        <>
+                            <Select
+                                label="Chief Complaint"
+                                value={data.chief_complaint || ''}
+                                onChange={e => set('chief_complaint', e.target.value)}
+                                options={toOptions(DROPDOWNS.ChiefComplaint)}
+                                error={errors.chief_complaint}
+                                required
+                            />
+                            <Select
+                                label="Side of Limb Affected"
+                                value={data.side_of_limb_affected || ''}
+                                onChange={e => set('side_of_limb_affected', e.target.value)}
+                                options={toOptions(DROPDOWNS.LimbSide)}
+                                error={errors.side_of_limb_affected}
+                                required
+                            />
+                            <Select
+                                label="Joint Involved"
+                                value={data.joint_involved || ''}
+                                onChange={e => set('joint_involved', e.target.value)}
+                                options={toOptions(DROPDOWNS.Joint)}
+                                error={errors.joint_involved}
+                                required
+                            />
+                        </>
+                    )}
                     <Select
                         label="Document Type"
                         value={data.document_type || ''}

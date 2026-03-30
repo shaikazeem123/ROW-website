@@ -15,8 +15,11 @@ import {
     Eye,
     History as HistoryIcon,
     ShieldCheck,
+    Trash2,
 } from 'lucide-react';
 import ExcelJS from 'exceljs';
+import { usePermissions } from '@/hooks/usePermissions';
+import { assessmentService } from '@/services/assessmentService';
 
 interface AssessmentRecord {
     patient_id: string;
@@ -44,7 +47,9 @@ export function AssessmentHistoryPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
+    const [deletingId, setDeletingId] = useState<string | null>(null);
     const navigate = useNavigate();
+    const { canDeleteRecords } = usePermissions();
 
     const fetchHistory = useCallback(async () => {
         setIsLoading(true);
@@ -168,6 +173,20 @@ export function AssessmentHistoryPage() {
         window.URL.revokeObjectURL(url);
     };
 
+    const handleDelete = async (patientId: string, patientName: string) => {
+        if (!confirm(`Delete all assessment data for "${patientName}" (${patientId})?\n\nThis will permanently remove the Initial, Clinical, and all Follow-Up assessments.`)) return;
+        setDeletingId(patientId);
+        try {
+            await assessmentService.deleteAssessment(patientId);
+            setRecords(prev => prev.filter(r => r.patient_id !== patientId));
+        } catch (err) {
+            console.error('Delete assessment error:', err);
+            alert('Failed to delete assessment. Please try again.');
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
     const conditionColors: Record<string, string> = {
         'Pain': 'bg-red-100 text-red-700',
         'Neuro': 'bg-purple-100 text-purple-700',
@@ -175,6 +194,7 @@ export function AssessmentHistoryPage() {
         'Post-Operative': 'bg-amber-100 text-amber-700',
         'Disability': 'bg-teal-100 text-teal-700',
         'Amputation': 'bg-orange-100 text-orange-700',
+        'Early Intervention Assessment': 'bg-pink-100 text-pink-700',
     };
 
     return (
@@ -361,13 +381,28 @@ export function AssessmentHistoryPage() {
                                             )}
                                         </td>
                                         <td className="py-5 pr-4 text-right">
-                                            <Button
-                                                variant="secondary"
-                                                className="h-8 px-2 flex items-center gap-1.5 text-[11px] bg-blue-50 text-blue-600 border-none hover:bg-blue-100"
-                                                onClick={() => navigate(`/assessments/view/${r.patient_id}`)}
-                                            >
-                                                <Eye size={14} /> View
-                                            </Button>
+                                            <div className="flex items-center justify-end gap-2">
+                                                <Button
+                                                    variant="secondary"
+                                                    className="h-8 px-2 flex items-center gap-1.5 text-[11px] bg-blue-50 text-blue-600 border-none hover:bg-blue-100"
+                                                    onClick={() => navigate(`/assessments/view/${r.patient_id}`)}
+                                                >
+                                                    <Eye size={14} /> View
+                                                </Button>
+                                                {canDeleteRecords && (
+                                                    <Button
+                                                        variant="secondary"
+                                                        className="h-8 px-2 flex items-center gap-1.5 text-[11px] bg-red-50 text-red-600 border-none hover:bg-red-100"
+                                                        onClick={() => handleDelete(r.patient_id, r.patient_name)}
+                                                        disabled={deletingId === r.patient_id}
+                                                    >
+                                                        {deletingId === r.patient_id
+                                                            ? <span className="w-3.5 h-3.5 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
+                                                            : <Trash2 size={14} />}
+                                                        Delete
+                                                    </Button>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

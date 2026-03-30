@@ -28,7 +28,6 @@ export function TripEntryPage() {
         departureTime: '09:00',
         returnTime: '17:00',
         purpose: 'Screening',
-        beneficiariesServed: '0',
         fuelLiters: '',
         fuelCost: '',
         generatorStart: '',
@@ -74,7 +73,6 @@ export function TripEntryPage() {
                         departureTime: tripToEdit.departure_time,
                         returnTime: tripToEdit.return_time,
                         purpose: tripToEdit.purpose,
-                        beneficiariesServed: tripToEdit.beneficiaries_served?.toString() || '0',
                         fuelLiters: tripToEdit.fuel_liters?.toString() || '',
                         fuelCost: tripToEdit.fuel_cost?.toString() || '',
                         generatorStart: tripToEdit.generator_start_reading?.toString() || '',
@@ -231,6 +229,38 @@ export function TripEntryPage() {
 
 
 
+    // Mark the matching monthly_schedule as completed when a trip is saved
+    const markScheduleCompleted = async (tripDate: string, tripLocation: string, tripId: string) => {
+        try {
+            // Try exact match first, then case-insensitive partial match
+            const { data: schedules } = await supabase
+                .from('monthly_schedules')
+                .select('id, location_name')
+                .eq('scheduled_date', tripDate)
+                .eq('is_active', true)
+                .neq('status', 'completed');
+
+            if (!schedules || schedules.length === 0) return;
+
+            // Find best match: exact first, then case-insensitive contains
+            const match = schedules.find(s => s.location_name === tripLocation)
+                || schedules.find(s =>
+                    tripLocation.toLowerCase().includes(s.location_name.toLowerCase()) ||
+                    s.location_name.toLowerCase().includes(tripLocation.toLowerCase())
+                );
+
+            if (match) {
+                await supabase
+                    .from('monthly_schedules')
+                    .update({ status: 'completed', trip_id: tripId })
+                    .eq('id', match.id);
+            }
+        } catch (err) {
+            // Non-blocking — the trip is already saved
+            console.error('Error marking schedule completed:', err);
+        }
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -258,7 +288,6 @@ export function TripEntryPage() {
             return_time: formData.returnTime,
             duration_hours: calculatedData.duration,
             purpose: formData.purpose,
-            beneficiaries_served: parseInt(formData.beneficiariesServed) || 0,
             fuel_liters: formData.fuelLiters ? parseFloat(formData.fuelLiters) : null,
             fuel_cost: formData.fuelCost ? parseFloat(formData.fuelCost) : null,
             fuel_efficiency: calculatedData.fuelEfficiency || null,
@@ -278,13 +307,23 @@ export function TripEntryPage() {
                     .eq('id', id);
 
                 if (error) throw error;
+
+                // Update matching schedule status (fallback if DB trigger doesn't match)
+                await markScheduleCompleted(formData.date, formData.location, id!);
             } else {
                 // Create new trip
-                const { error } = await supabase
+                const { data: inserted, error } = await supabase
                     .from('trips')
-                    .insert([tripData]);
+                    .insert([tripData])
+                    .select('id')
+                    .single();
 
                 if (error) throw error;
+
+                // Update matching schedule status (fallback if DB trigger doesn't match)
+                if (inserted) {
+                    await markScheduleCompleted(formData.date, formData.location, inserted.id);
+                }
             }
             // Navigate to tracking dashboard
             navigate('/tracking');
@@ -349,15 +388,6 @@ export function TripEntryPage() {
                                     { value: 'Emergency', label: 'Emergency' },
                                     { value: 'Other', label: 'Other' },
                                 ]}
-                            />
-                            <Input
-                                label="Beneficiaries Served"
-                                name="beneficiariesServed"
-                                type="number"
-                                value={formData.beneficiariesServed}
-                                onChange={handleChange}
-                                required
-                                min="0"
                             />
                             <Input
                                 label="Driver Name"

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Save, ArrowLeft, Stethoscope, Clock, ShieldCheck, Heart, DollarSign, FileText, ClipboardList } from 'lucide-react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -8,12 +8,15 @@ import { Input } from '@/components/common/Input';
 import { Select } from '@/components/common/Select';
 import { BeneficiarySelect } from '@/components/beneficiary/BeneficiarySelect';
 import { SERVICE_MASTER, LOCATION_MASTER, MODE_OF_SERVICE } from '@/data/masters';
+import { supabase } from '@/lib/supabase';
 import { ServiceEntryService } from '@/services/serviceEntryService';
 import type { ServiceEntry, ServiceEntryPayload } from '@/types/serviceEntry';
 import { usePermissions } from '@/hooks/usePermissions';
 
 export function ServiceEntryPage() {
     const { id } = useParams<{ id: string }>();
+    const [searchParams] = useSearchParams();
+    const beneficiaryIdFromUrl = searchParams.get('beneficiary_id');
     const navigate = useNavigate();
     const { role } = usePermissions();
     const isAdmin = role === 'Admin';
@@ -22,10 +25,11 @@ export function ServiceEntryPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [followUpOptions, setFollowUpOptions] = useState<{ value: string; label: string }[]>([]);
+    const [preselectedBeneficiaryId, setPreselectedBeneficiaryId] = useState<string | null>(beneficiaryIdFromUrl);
 
     const [formData, setFormData] = useState<Partial<ServiceEntry>>({
         status: 'SCHEDULED',
-        file_number: '',
+        file_number: null,
         schedule_date: new Date().toISOString().split('T')[0],
         start_date: new Date().toISOString().split('T')[0],
         end_date: null,
@@ -63,43 +67,60 @@ export function ServiceEntryPage() {
         }
     }, [id]);
 
+    // Auto-fill beneficiary when coming from beneficiary profile page
+    useEffect(() => {
+        if (beneficiaryIdFromUrl && !id) {
+            const fetchBeneficiary = async () => {
+                const { data, error: fetchErr } = await supabase
+                    .from('beneficiaries')
+                    .select('id, name, file_number')
+                    .eq('id', beneficiaryIdFromUrl)
+                    .single();
+
+                if (!fetchErr && data) {
+                    setFormData(prev => ({
+                        ...prev,
+                        file_number: data.file_number || data.name
+                    }));
+                }
+            };
+            fetchBeneficiary();
+        }
+    }, [beneficiaryIdFromUrl, id]);
+
     useEffect(() => {
         const fetchHistoryAndGenerateOptions = async () => {
-            if (!formData.file_number) {
-                setFollowUpOptions([]);
-                return;
-            }
+            const options: { value: string; label: string }[] = [
+                { value: 'Initial Visit', label: 'Initial Visit' },
+                { value: 'Follow Up 1', label: 'Follow Up 1' },
+                { value: 'Follow Up 2', label: 'Follow Up 2' },
+                { value: 'Follow Up 3', label: 'Follow Up 3' },
+                { value: 'Follow Up 4', label: 'Follow Up 4' }
+            ];
 
-            try {
-                // Fixed options as requested by user
-                const options: { value: string; label: string }[] = [
-                    { value: 'Initial Visit', label: 'Initial Visit' },
-                    { value: 'follow up 1', label: 'follow up 1' },
-                    { value: 'followup 2', label: 'followup 2' },
-                    { value: 'followup 3', label: 'followup 3' },
-                    { value: 'followup 4', label: 'followup 4' }
-                ];
+            setFollowUpOptions(options);
 
-                setFollowUpOptions(options);
-
-                // Auto-select the first follow-up if none is selected and it's a new entry
-                if (!formData.custom_field2 && !id) {
-                    setFormData(prev => ({ ...prev, custom_field2: 'Initial Visit' }));
+            // Auto-detect next follow-up based on existing service history
+            if (!id && formData.file_number) {
+                try {
+                    const history = await ServiceEntryService.getHistoryByFileNumber(formData.file_number);
+                    const count = history.length;
+                    const nextFollowUp = count === 0
+                        ? 'Initial Visit'
+                        : count <= 4
+                            ? `Follow Up ${count}`
+                            : `Follow Up 4`;
+                    setFormData(prev => ({ ...prev, custom_field2: nextFollowUp }));
+                } catch (err) {
+                    console.error('Error fetching service history:', err);
                 }
-            } catch (err) {
-                console.error('Error setting follow-up options:', err);
-                setFollowUpOptions([
-                    { value: 'Initial Visit', label: 'Initial Visit' },
-                    { value: 'follow up 1', label: 'follow up 1' },
-                    { value: 'followup 2', label: 'followup 2' },
-                    { value: 'followup 3', label: 'followup 3' },
-                    { value: 'followup 4', label: 'followup 4' }
-                ]);
+            } else if (!id && !formData.file_number) {
+                setFormData(prev => ({ ...prev, custom_field2: 'Initial Visit' }));
             }
         };
 
         fetchHistoryAndGenerateOptions();
-    }, [formData.file_number, formData.custom_field2, id]);
+    }, [formData.file_number, id]);
 
     const handleChange = (name: string, value: string | number | null) => {
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -107,7 +128,6 @@ export function ServiceEntryPage() {
     };
 
     const validate = (): boolean => {
-        if (!formData.file_number) { setError('File Number is mandatory'); return false; }
         if (!formData.status) { setError('Status is mandatory'); return false; }
         if (!formData.schedule_date) { setError('Schedule Date is mandatory'); return false; }
         if (!formData.start_date) { setError('Start Date is mandatory'); return false; }
@@ -226,9 +246,13 @@ export function ServiceEntryPage() {
 
                                 <div className="md:col-span-1">
                                     <BeneficiarySelect
-                                        placeholder="File Number (Search Beneficiary)"
-                                        onSelect={(b) => handleChange('file_number', b.file_number)}
-                                        selectedFileNumber={formData.file_number}
+                                        placeholder="Search Beneficiary (Name / File No)"
+                                        onSelect={(b) => {
+                                            handleChange('file_number', b.file_number || b.name);
+                                            setPreselectedBeneficiaryId(null);
+                                        }}
+                                        selectedId={preselectedBeneficiaryId || undefined}
+                                        selectedFileNumber={!preselectedBeneficiaryId ? formData.file_number : undefined}
                                     />
                                 </div>
 
@@ -283,7 +307,7 @@ export function ServiceEntryPage() {
                                         { value: '', label: '-- Select Follow-up --' },
                                         ...followUpOptions
                                     ]}
-                                    disabled={!formData.file_number}
+                                    disabled={false}
                                 />
                             </div>
 

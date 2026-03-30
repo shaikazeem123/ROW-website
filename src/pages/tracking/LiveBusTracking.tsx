@@ -9,7 +9,11 @@ import {
     Calendar,
     BarChart3,
     Download,
-    Zap
+    Zap,
+    CheckCircle2,
+    Clock,
+    History,
+    Eye,
 } from 'lucide-react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -27,6 +31,12 @@ interface MonthlySchedule {
     address?: string;
     status?: string;
     is_active: boolean;
+    trip_id?: string;
+}
+
+interface CompletedCamp {
+    schedule: MonthlySchedule;
+    trip: Trip | null;
 }
 
 export function LiveBusTrackingPage() {
@@ -38,6 +48,8 @@ export function LiveBusTrackingPage() {
         end: new Date().toISOString().split('T')[0]
     });
     const [upcomingCamps, setUpcomingCamps] = useState<MonthlySchedule[]>([]);
+    const [completedCamps, setCompletedCamps] = useState<CompletedCamp[]>([]);
+    const [campTab, setCampTab] = useState<'upcoming' | 'completed'>('upcoming');
 
     const getFilteredTrips = useCallback(() => {
         const now = new Date();
@@ -57,7 +69,6 @@ export function LiveBusTrackingPage() {
             if (timeframe === 'custom') {
                 const start = new Date(customDateRange.start);
                 const end = new Date(customDateRange.end);
-                // Set end time to end of day to include trips on that day
                 end.setHours(23, 59, 59, 999);
                 return tripDate >= start && tripDate <= end;
             }
@@ -108,12 +119,38 @@ export function LiveBusTrackingPage() {
 
     useEffect(() => {
         loadTrips();
-        loadUpcomingCamps();
+        loadCamps();
     }, []);
 
     useEffect(() => {
         calculateStats();
     }, [calculateStats]);
+
+    const mapTrip = (t: Record<string, unknown>): Trip => ({
+        id: t.id as string,
+        date: t.date as string,
+        busNumber: t.bus_number as string,
+        driverName: t.driver_name as string,
+        assistantName: t.assistant_name as string | undefined,
+        odometerStart: t.odometer_start as number | undefined,
+        odometerEnd: t.odometer_end as number | undefined,
+        finalDistance: t.final_distance as number,
+        location: t.location as string,
+        departureTime: t.departure_time as string,
+        returnTime: t.return_time as string,
+        durationHours: t.duration_hours as number,
+        purpose: t.purpose as Trip['purpose'],
+        beneficiariesServed: (t.beneficiaries_served as number) || 0,
+        fuelLiters: t.fuel_liters as number | undefined,
+        fuelCost: t.fuel_cost as number | undefined,
+        fuelEfficiency: t.fuel_efficiency as number | undefined,
+        generatorStartReading: t.generator_start_reading as number | undefined,
+        generatorEndReading: t.generator_end_reading as number | undefined,
+        generatorUnitsUsed: t.generator_units_used as number | undefined,
+        notes: t.notes as string | undefined,
+        createdAt: t.created_at as string,
+        createdBy: t.created_by as string,
+    });
 
     const loadTrips = async () => {
         try {
@@ -123,61 +160,92 @@ export function LiveBusTrackingPage() {
                 .order('date', { ascending: false });
 
             if (error) throw error;
-
-            const mappedTrips: Trip[] = data.map((t) => ({
-                id: t.id,
-                date: t.date,
-                busNumber: t.bus_number,
-                driverName: t.driver_name,
-                assistantName: t.assistant_name,
-                odometerStart: t.odometer_start,
-                odometerEnd: t.odometer_end,
-                finalDistance: t.final_distance,
-                location: t.location,
-                departureTime: t.departure_time,
-                returnTime: t.return_time,
-                durationHours: t.duration_hours,
-                purpose: t.purpose,
-                beneficiariesServed: t.beneficiaries_served || 0,
-                fuelLiters: t.fuel_liters,
-                fuelCost: t.fuel_cost,
-                fuelEfficiency: t.fuel_efficiency,
-                generatorStartReading: t.generator_start_reading,
-                generatorEndReading: t.generator_end_reading,
-                generatorUnitsUsed: t.generator_units_used,
-                notes: t.notes,
-                createdAt: t.created_at,
-                createdBy: t.created_by,
-            }));
-
-            setTrips(mappedTrips);
+            setTrips((data || []).map(mapTrip));
         } catch (error) {
             console.error('Error loading trips:', error);
         }
     };
 
-    const loadUpcomingCamps = async () => {
+    const loadCamps = async () => {
         try {
-            const currentDate = new Date();
+            const today = new Date().toISOString().split('T')[0];
 
-            const { data, error } = await supabase
+            // 1) Upcoming: active schedules that are NOT completed and date >= today
+            const { data: upcoming, error: upErr } = await supabase
                 .from('monthly_schedules')
                 .select('*')
                 .eq('is_active', true)
-                .gte('scheduled_date', currentDate.toISOString().split('T')[0])
-                .order('scheduled_date', { ascending: true })
-                .limit(10);
+                .gte('scheduled_date', today)
+                .neq('status', 'completed')
+                .order('scheduled_date', { ascending: true });
 
-            if (error) throw error;
+            if (upErr) throw upErr;
+            setUpcomingCamps(upcoming || []);
 
-            setUpcomingCamps(data || []);
+            // 2) Completed: active schedules that are completed OR have a trip_id
+            const { data: completed, error: compErr } = await supabase
+                .from('monthly_schedules')
+                .select('*')
+                .eq('is_active', true)
+                .or('status.eq.completed,trip_id.not.is.null')
+                .order('scheduled_date', { ascending: false });
+
+            if (compErr) throw compErr;
+
+            if (!completed || completed.length === 0) {
+                setCompletedCamps([]);
+                return;
+            }
+
+            // Fetch linked trips for completed camps
+            const tripIds = completed
+                .map(c => c.trip_id)
+                .filter((id): id is string => !!id);
+
+            let tripsMap = new Map<string, Trip>();
+            if (tripIds.length > 0) {
+                const { data: tripRows } = await supabase
+                    .from('trips')
+                    .select('*')
+                    .in('id', tripIds);
+
+                (tripRows || []).forEach(t => {
+                    tripsMap.set(t.id, mapTrip(t));
+                });
+            }
+
+            // Also match by date + location for camps without trip_id
+            const unmatchedCamps = completed.filter(c => !c.trip_id);
+            if (unmatchedCamps.length > 0) {
+                const dates = [...new Set(unmatchedCamps.map(c => c.scheduled_date))];
+                const { data: matchTrips } = await supabase
+                    .from('trips')
+                    .select('*')
+                    .in('date', dates);
+
+                (matchTrips || []).forEach(t => {
+                    // Find matching camp by date + location name
+                    const matchedCamp = unmatchedCamps.find(
+                        c => c.scheduled_date === t.date &&
+                            t.location.toLowerCase().includes(c.location_name.toLowerCase())
+                    );
+                    if (matchedCamp && !tripsMap.has(t.id)) {
+                        tripsMap.set(matchedCamp.id, mapTrip(t));
+                    }
+                });
+            }
+
+            setCompletedCamps(
+                completed.map(schedule => ({
+                    schedule,
+                    trip: tripsMap.get(schedule.trip_id || schedule.id) || null,
+                }))
+            );
         } catch (error) {
             console.error('Error loading camps:', error);
         }
     };
 
-
-    // Get location visit breakdown based on filtered trips
     const getLocationStats = () => {
         const filtered = getFilteredTrips();
         const locationMap: Record<string, { visits: number; distance: number }> = {};
@@ -195,7 +263,6 @@ export function LiveBusTrackingPage() {
             .sort((a, b) => b.visits - a.visits);
     };
 
-    // Get recent trips
     const getRecentTrips = () => {
         return [...getFilteredTrips()]
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -308,7 +375,6 @@ export function LiveBusTrackingPage() {
                 </div>
             </div>
 
-
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card className="p-4 border-l-4 border-l-blue-500">
@@ -340,8 +406,6 @@ export function LiveBusTrackingPage() {
                         {stats.totalTrips} total trips
                     </p>
                 </Card>
-
-
 
                 <Card className="p-4 border-l-4 border-l-orange-500">
                     <div className="flex justify-between items-start">
@@ -441,7 +505,7 @@ export function LiveBusTrackingPage() {
                         </div>
                     )}
 
-                    {/* Map placed under location details */}
+                    {/* Map */}
                     <div className="mt-8 border-t border-gray-100 pt-6">
                         <div className="flex items-center justify-between mb-4">
                             <h4 className="font-semibold text-text-main flex items-center gap-2">
@@ -489,54 +553,204 @@ export function LiveBusTrackingPage() {
                     )}
                 </Card>
 
-                {/* Upcoming Camps - Current Month */}
-                <div id="upcoming-camps" className="lg:col-span-2">
+                {/* Upcoming Camps & Trip History — Tabbed Section */}
+                <div id="upcoming-camps" className="lg:col-span-3">
                     <Card>
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="font-semibold text-lg text-text-main flex items-center gap-2">
-                                <Calendar className="text-primary" size={20} />
-                                Upcoming Camps
-                            </h3>
+                        {/* Tab Header */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                            <div className="flex bg-gray-100 p-1 rounded-lg">
+                                <button
+                                    onClick={() => setCampTab('upcoming')}
+                                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all ${campTab === 'upcoming'
+                                        ? 'bg-white text-primary shadow-sm'
+                                        : 'text-text-muted hover:text-text-main'
+                                        }`}
+                                >
+                                    <Clock size={16} />
+                                    Upcoming Camps
+                                    {upcomingCamps.length > 0 && (
+                                        <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700">
+                                            {upcomingCamps.length}
+                                        </span>
+                                    )}
+                                </button>
+                                <button
+                                    onClick={() => setCampTab('completed')}
+                                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all ${campTab === 'completed'
+                                        ? 'bg-white text-primary shadow-sm'
+                                        : 'text-text-muted hover:text-text-main'
+                                        }`}
+                                >
+                                    <History size={16} />
+                                    Trip History
+                                    {completedCamps.length > 0 && (
+                                        <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-green-100 text-green-700">
+                                            {completedCamps.length}
+                                        </span>
+                                    )}
+                                </button>
+                            </div>
+                            {campTab === 'upcoming' && upcomingCamps.length > 0 && (
+                                <p className="text-xs text-text-muted">
+                                    Camps move to Trip History once a trip is logged for them.
+                                </p>
+                            )}
                         </div>
 
-                        {upcomingCamps.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {upcomingCamps.map((camp, index) => (
-                                    <div key={index} className={`p-3 border rounded-lg ${camp.status === 'completed'
-                                        ? 'bg-green-50 border-green-200'
-                                        : 'bg-blue-50 border-blue-100'
-                                        }`}>
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className="text-xs font-bold uppercase" style={{
-                                                color: camp.status === 'completed' ? '#166534' : '#1e3a8a'
-                                            }}>
-                                                {new Date(camp.scheduled_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                            </span>
-                                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${camp.status === 'completed'
-                                                ? 'text-green-700 bg-green-100'
-                                                : 'text-blue-600 bg-blue-100'
-                                                }`}>
-                                                {camp.status === 'completed' ? '✓ Completed' : 'Scheduled'}
-                                            </span>
-                                        </div>
-                                        <h4 className="font-semibold text-sm text-blue-900 mb-1">
-                                            <MapPin className="inline w-3 h-3 mr-1" />
-                                            {camp.location_name}
-                                        </h4>
-                                        {camp.address && (
-                                            <p className="text-xs text-blue-700 line-clamp-2">
-                                                {camp.address}
-                                            </p>
-                                        )}
+                        {/* Upcoming Camps Tab */}
+                        {campTab === 'upcoming' && (
+                            <>
+                                {upcomingCamps.length > 0 ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {upcomingCamps.map((camp) => {
+                                            const campDate = new Date(camp.scheduled_date);
+                                            const today = new Date();
+                                            today.setHours(0, 0, 0, 0);
+                                            const diffDays = Math.ceil((campDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                                            const isToday = diffDays === 0;
+                                            const isTomorrow = diffDays === 1;
+
+                                            return (
+                                                <div key={camp.id} className={`p-4 border rounded-xl transition-all ${isToday
+                                                    ? 'bg-amber-50 border-amber-300 ring-2 ring-amber-200'
+                                                    : isTomorrow
+                                                        ? 'bg-blue-50 border-blue-200'
+                                                        : 'bg-white border-gray-200 hover:border-primary/30'
+                                                    }`}>
+                                                    <div className="flex items-center justify-between mb-3">
+                                                        <span className={`text-xs font-bold uppercase tracking-wider ${isToday ? 'text-amber-700' : isTomorrow ? 'text-blue-700' : 'text-gray-500'}`}>
+                                                            {campDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                                                        </span>
+                                                        {isToday && (
+                                                            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-200 text-amber-800 animate-pulse">
+                                                                TODAY
+                                                            </span>
+                                                        )}
+                                                        {isTomorrow && (
+                                                            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-blue-200 text-blue-800">
+                                                                TOMORROW
+                                                            </span>
+                                                        )}
+                                                        {!isToday && !isTomorrow && (
+                                                            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-gray-100 text-gray-500">
+                                                                In {diffDays} days
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <h4 className="font-semibold text-sm text-text-main mb-1 flex items-center gap-1.5">
+                                                        <MapPin size={14} className="text-primary flex-shrink-0" />
+                                                        {camp.location_name}
+                                                    </h4>
+                                                    {camp.address && (
+                                                        <p className="text-xs text-text-muted line-clamp-2 ml-5">
+                                                            {camp.address}
+                                                        </p>
+                                                    )}
+                                                    {isToday && (
+                                                        <Link to="/tracking/add-trip" className="mt-3 block">
+                                                            <Button className="w-full text-xs py-1.5 flex items-center justify-center gap-1.5">
+                                                                <Plus size={14} /> Log Trip
+                                                            </Button>
+                                                        </Link>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-8 bg-gray-50 rounded-lg">
-                                <Calendar size={32} className="mx-auto text-gray-300 mb-2" />
-                                <p className="text-text-muted text-sm">No upcoming camps scheduled</p>
-                                <p className="text-xs text-text-muted mt-1">Upload monthly schedule in Admin Control</p>
-                            </div>
+                                ) : (
+                                    <div className="text-center py-12 bg-gray-50 rounded-lg">
+                                        <Calendar size={36} className="mx-auto text-gray-300 mb-3" />
+                                        <p className="text-text-muted font-medium">No upcoming camps scheduled</p>
+                                        <p className="text-xs text-text-muted mt-1">Upload monthly schedule in Admin Control</p>
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {/* Completed / Trip History Tab */}
+                        {campTab === 'completed' && (
+                            <>
+                                {completedCamps.length > 0 ? (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-sm">
+                                            <thead>
+                                                <tr className="border-b border-gray-200 bg-gray-50">
+                                                    <th className="text-left py-3 px-4 font-semibold text-text-main">Scheduled Date</th>
+                                                    <th className="text-left py-3 px-4 font-semibold text-text-main">Location</th>
+                                                    <th className="text-left py-3 px-4 font-semibold text-text-main">Trip Date</th>
+                                                    <th className="text-left py-3 px-4 font-semibold text-text-main">Bus</th>
+                                                    <th className="text-right py-3 px-4 font-semibold text-text-main">Distance</th>
+                                                    <th className="text-right py-3 px-4 font-semibold text-text-main">Beneficiaries</th>
+                                                    <th className="text-left py-3 px-4 font-semibold text-text-main">Driver</th>
+                                                    <th className="text-center py-3 px-4 font-semibold text-text-main">Status</th>
+                                                    <th className="text-right py-3 px-4 font-semibold text-text-main">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-100">
+                                                {completedCamps.map((item) => (
+                                                    <tr key={item.schedule.id} className="hover:bg-gray-50/50 transition-colors">
+                                                        <td className="py-3 px-4">
+                                                            <span className="text-xs font-bold text-gray-600">
+                                                                {new Date(item.schedule.scheduled_date).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-3 px-4">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <MapPin size={14} className="text-primary flex-shrink-0" />
+                                                                <div>
+                                                                    <span className="font-medium text-text-main">{item.schedule.location_name}</span>
+                                                                    {item.schedule.address && (
+                                                                        <p className="text-[10px] text-text-muted truncate max-w-[180px]">{item.schedule.address}</p>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        {item.trip ? (
+                                                            <>
+                                                                <td className="py-3 px-4 text-xs">
+                                                                    {new Date(item.trip.date).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                                </td>
+                                                                <td className="py-3 px-4 text-xs text-text-muted">{item.trip.busNumber}</td>
+                                                                <td className="py-3 px-4 text-right font-medium">{item.trip.finalDistance} km</td>
+                                                                <td className="py-3 px-4 text-right font-medium text-blue-600">{item.trip.beneficiariesServed}</td>
+                                                                <td className="py-3 px-4 text-xs text-text-muted">{item.trip.driverName}</td>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <td className="py-3 px-4 text-xs text-text-muted">--</td>
+                                                                <td className="py-3 px-4 text-xs text-text-muted">--</td>
+                                                                <td className="py-3 px-4 text-right text-xs text-text-muted">--</td>
+                                                                <td className="py-3 px-4 text-right text-xs text-text-muted">--</td>
+                                                                <td className="py-3 px-4 text-xs text-text-muted">--</td>
+                                                            </>
+                                                        )}
+                                                        <td className="py-3 px-4 text-center">
+                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700">
+                                                                <CheckCircle2 size={10} /> Completed
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-3 px-4 text-right">
+                                                            {item.trip && (
+                                                                <Link to={`/tracking/edit-trip/${item.trip.id}`}>
+                                                                    <button className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors">
+                                                                        <Eye size={12} /> View
+                                                                    </button>
+                                                                </Link>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-12 bg-gray-50 rounded-lg">
+                                        <CheckCircle2 size={36} className="mx-auto text-gray-300 mb-3" />
+                                        <p className="text-text-muted font-medium">No completed trips yet</p>
+                                        <p className="text-xs text-text-muted mt-1">Trips will appear here once a camp is completed</p>
+                                    </div>
+                                )}
+                            </>
                         )}
                     </Card>
                 </div>

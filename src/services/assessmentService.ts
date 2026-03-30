@@ -29,7 +29,7 @@ export const assessmentService = {
     async createInitial(data: Omit<InitialAssessment, 'created_at'>): Promise<InitialAssessment> {
         const { data: result, error } = await supabase
             .from('initial_assessment')
-            .insert(data)
+            .upsert(data, { onConflict: 'patient_id' })
             .select()
             .single();
         if (error) { console.error('Create initial assessment error:', error); throw error; }
@@ -121,6 +121,28 @@ export const assessmentService = {
             .order('session_number', { ascending: true });
         if (error) { console.error('Get follow-ups error:', error); return []; }
         return (data || []) as FollowUpAssessment[];
+    },
+
+    // ── Delete entire assessment (all 3 tables) ──
+    async deleteAssessment(patientId: string): Promise<void> {
+        // Delete follow-ups first, then clinical, then initial (child -> parent order)
+        const { error: fuErr } = await supabase
+            .from('follow_up_assessment')
+            .delete()
+            .eq('patient_id', patientId);
+        if (fuErr) { console.error('Delete follow-ups error:', fuErr); throw fuErr; }
+
+        const { error: clErr } = await supabase
+            .from('clinical_assessment')
+            .delete()
+            .eq('patient_id', patientId);
+        if (clErr) { console.error('Delete clinical error:', clErr); throw clErr; }
+
+        const { error: inErr } = await supabase
+            .from('initial_assessment')
+            .delete()
+            .eq('patient_id', patientId);
+        if (inErr) { console.error('Delete initial error:', inErr); throw inErr; }
     },
 
     async getLatestFollowUp(patientId: string): Promise<FollowUpAssessment | null> {
