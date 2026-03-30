@@ -202,7 +202,7 @@ export function AssessmentHistoryPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-text-main flex items-center gap-2">
+                    <h1 className="text-xl md:text-2xl font-bold text-text-main flex items-center gap-2">
                         <HistoryIcon className="text-primary" /> Assessment History
                     </h1>
                     <p className="text-text-muted text-sm mt-1">Track all patient assessments, sessions, and progress across conditions.</p>
@@ -212,7 +212,7 @@ export function AssessmentHistoryPage() {
                         <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
                     </Button>
                     <Button onClick={handleExport} className="flex items-center gap-2 shadow-lg shadow-primary/20">
-                        <Download size={18} /> Export Excel
+                        <Download size={18} /> <span className="hidden sm:inline">Export Excel</span>
                     </Button>
                 </div>
             </div>

@@ -200,7 +200,7 @@ export function ServiceEntryPage() {
                         <ArrowLeft size={20} />
                     </button>
                     <div>
-                        <h1 className="text-2xl font-bold text-text-main flex items-center gap-2">
+                        <h1 className="text-xl md:text-2xl font-bold text-text-main flex items-center gap-2">
                             <Stethoscope className="text-primary" /> {id ? 'Edit Service Entry' : 'New Service Entry'}
                         </h1>
                         <p className="text-text-muted text-sm">
@@ -222,7 +222,7 @@ export function ServiceEntryPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-                <Card className="p-8 shadow-xl border-t-4 border-t-primary">
+                <Card className="p-4 md:p-8 shadow-xl border-t-4 border-t-primary">
                     <div className="space-y-8">
                         {/* SECTION 1: CORE DETAILS */}
                         <div className="space-y-6">
@@ -474,12 +474,12 @@ export function ServiceEntryPage() {
                         </div>
                     )}
 
-                    <div className="mt-10 flex justify-end gap-4">
+                    <div className="mt-10 flex flex-col sm:flex-row justify-end gap-4">
                         <Button
                             type="button"
                             variant="secondary"
                             onClick={() => navigate('/services/history')}
-                            className="px-8 h-12 text-base font-bold bg-gray-100 hover:bg-gray-200 border-none text-gray-600"
+                            className="w-full sm:w-auto px-8 h-12 text-base font-bold bg-gray-100 hover:bg-gray-200 border-none text-gray-600"
                         >
                             Cancel
                         </Button>

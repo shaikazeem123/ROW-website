@@ -350,7 +350,7 @@ Area: ${token.area || '-'}
     return (
         <div className="space-y-6">
             <header>
-                <h1 className="text-3xl font-bold text-gray-900">Token Management</h1>
+                <h1 className="text-xl md:text-2xl font-bold text-gray-900">Token Management</h1>
                 <p className="text-gray-500">Manage daily tokens and queue</p>
             </header>
 
@@ -572,8 +572,8 @@ Area: ${token.area || '-'}
                             </div>
                         </div>
 
-                        <div className="overflow-auto flex-1 p-0">
-                            <table className="w-full text-left text-sm">
+                        <div className="overflow-x-auto flex-1 p-0">
+                            <table className="w-full text-left text-sm min-w-[500px]">
                                 <thead className="bg-gray-50 text-gray-500 font-medium">
                                     <tr>
                                         <th className="p-3">Token</th>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { History, MapPin, Calendar, Plus, Download, Edit2 } from 'lucide-react';
+import { History, MapPin, Calendar, Plus, Download, Edit2, Trash2, Loader2 } from 'lucide-react';
 import { exportTripsToCSV } from '@/utils/exportUtils';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase';
 
 export function TripHistoryPage() {
     const [trips, setTrips] = useState<Trip[]>([]);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
     const [filter, setFilter] = useState({
         location: '',
         month: '',
@@ -58,6 +59,27 @@ export function TripHistoryPage() {
         }
     };
 
+    const handleDelete = async (trip: Trip) => {
+        const date = new Date(trip.date).toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' });
+        if (!confirm(`Delete trip to "${trip.location}" on ${date}?\n\nBus: ${trip.busNumber}\nDistance: ${trip.finalDistance} km\n\nThis action cannot be undone.`)) return;
+
+        setDeletingId(trip.id);
+        try {
+            const { error } = await supabase
+                .from('trips')
+                .delete()
+                .eq('id', trip.id);
+
+            if (error) throw error;
+            setTrips(prev => prev.filter(t => t.id !== trip.id));
+        } catch (err) {
+            console.error('Delete trip error:', err);
+            alert('Failed to delete trip. Please try again.');
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
     const getFilteredTrips = () => {
         return trips.filter(trip => {
             if (filter.location && trip.location !== filter.location) return false;
@@ -79,7 +101,7 @@ export function TripHistoryPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-text-main flex items-center gap-2">
+                    <h1 className="text-xl md:text-2xl font-bold text-text-main flex items-center gap-2">
                         <History className="text-primary" size={28} />
                         Trip History
                     </h1>
@@ -88,15 +110,15 @@ export function TripHistoryPage() {
                 <div className="flex gap-3">
                     <Button
                         variant="outline"
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 min-h-[44px]"
                         onClick={() => exportTripsToCSV(filteredTrips)}
                         disabled={filteredTrips.length === 0}
                     >
                         <Download size={18} />
-                        Export
+                        <span className="hidden sm:inline">Export</span>
                     </Button>
                     <Link to="/tracking/add-trip">
-                        <Button className="flex items-center gap-2">
+                        <Button className="flex items-center gap-2 min-h-[44px]">
                             <Plus size={18} />
                             Add Trip
                         </Button>
@@ -141,7 +163,7 @@ export function TripHistoryPage() {
                 </div>
 
                 {/* Summary */}
-                <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="text-center p-3 bg-blue-50 rounded-lg">
                         <p className="text-sm text-blue-700">Total Trips</p>
                         <p className="text-2xl font-bold text-blue-900">{filteredTrips.length}</p>
@@ -152,7 +174,7 @@ export function TripHistoryPage() {
                             {filteredTrips.reduce((sum, t) => sum + t.finalDistance, 0)} km
                         </p>
                     </div>
-                    <div className="text-center p-3 bg-orange-50 rounded-lg md:col-span-2">
+                    <div className="text-center p-3 bg-orange-50 rounded-lg col-span-2 md:col-span-2">
                         <p className="text-sm text-orange-700">Total Fuel Cost</p>
                         <p className="text-2xl font-bold text-orange-900">
                             ₹{filteredTrips.reduce((sum, t) => sum + (t.fuelCost || 0), 0).toLocaleString()}
@@ -201,11 +223,23 @@ export function TripHistoryPage() {
                                             {trip.fuelEfficiency ? `${trip.fuelEfficiency} km/L` : '--'}
                                         </td>
                                         <td className="p-3 text-sm text-right">
-                                            <Link to={`/tracking/edit-trip/${trip.id}`}>
-                                                <Button variant="outline" className="p-2 h-auto text-primary hover:bg-primary/5">
-                                                    <Edit2 size={14} />
+                                            <div className="flex items-center justify-end gap-1.5">
+                                                <Link to={`/tracking/edit-trip/${trip.id}`}>
+                                                    <Button variant="outline" className="p-2 h-auto text-primary hover:bg-primary/5">
+                                                        <Edit2 size={14} />
+                                                    </Button>
+                                                </Link>
+                                                <Button
+                                                    variant="outline"
+                                                    className="p-2 h-auto text-red-500 hover:bg-red-50 border-red-200"
+                                                    onClick={() => handleDelete(trip)}
+                                                    disabled={deletingId === trip.id}
+                                                >
+                                                    {deletingId === trip.id
+                                                        ? <Loader2 size={14} className="animate-spin" />
+                                                        : <Trash2 size={14} />}
                                                 </Button>
-                                            </Link>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

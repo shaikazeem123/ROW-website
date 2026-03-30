@@ -339,7 +339,7 @@ export function TripEntryPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-text-main flex items-center gap-2">
+                    <h1 className="text-xl md:text-2xl font-bold text-text-main flex items-center gap-2">
                         {isEditMode ? <Edit2 className="text-primary" size={28} /> : <Bus className="text-primary" size={28} />}
                         {isEditMode ? 'Edit Bus Trip' : 'Add Bus Trip'}
                     </h1>
@@ -473,7 +473,7 @@ export function TripEntryPage() {
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <p className="text-sm text-green-700 mb-1">Calculated Distance</p>
-                                            <p className="text-3xl font-bold text-green-900">
+                                            <p className="text-2xl md:text-3xl font-bold text-green-900 break-words">
                                                 {calculatedData.distance} <span className="text-lg">km</span>
                                             </p>
                                         </div>
@@ -606,18 +606,18 @@ export function TripEntryPage() {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-4 pt-4 border-t border-gray-100 justify-end">
+                    <div className="flex flex-col-reverse sm:flex-row gap-4 pt-4 border-t border-gray-100 sm:justify-end">
                         <Button
                             type="button"
                             variant="secondary"
                             onClick={() => navigate('/tracking')}
-                            className="w-32"
+                            className="w-full sm:w-32"
                         >
                             Cancel
                         </Button>
                         <Button
                             type="submit"
-                            className="w-40 flex items-center justify-center gap-2"
+                            className="w-full sm:w-40 flex items-center justify-center gap-2"
                             disabled={!calculatedData.distance || !formData.location}
                         >
                             <Save size={18} />

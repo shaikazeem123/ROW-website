@@ -50,7 +50,7 @@ export function BeneficiaryRegistrationChart({ timeframe, filter }: Props) {
     }, [timeframe, selectedLocation, filter]);
 
     return (
-        <Card className="p-6 h-[500px] flex flex-col">
+        <Card className="p-6 h-[300px] md:h-[500px] flex flex-col">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
                     <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">

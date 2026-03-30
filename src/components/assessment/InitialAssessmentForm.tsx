@@ -332,7 +332,7 @@ export function InitialAssessmentForm({ data, onChange, onSaved, isEdit }: Props
 
             {/* Submit */}
             <div className="flex justify-end">
-                <Button onClick={handleSubmit} disabled={isSaving}>
+                <Button onClick={handleSubmit} disabled={isSaving} className="w-full sm:w-auto">
                     {isSaving ? <Loader2 size={16} className="animate-spin mr-2 inline" /> : <Save size={16} className="mr-2 inline" />}
                     {isEdit ? 'Update & Continue' : 'Save & Continue'}
                 </Button>

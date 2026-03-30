@@ -138,7 +138,7 @@ export function AdminControlPage() {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h1 className="text-2xl font-bold text-text-main flex items-center gap-2">
+                <h1 className="text-xl md:text-2xl font-bold text-text-main flex items-center gap-2">
                     <Shield className="text-primary" /> Admin Control Center
                 </h1>
                 <p className="text-text-muted">Manage system users, permissions, and security settings.</p>
@@ -219,6 +219,8 @@ export function AdminControlPage() {
                                                 <option value="Admin">Admin</option>
                                                 <option value="Manager">Manager</option>
                                                 <option value="Staff">Staff</option>
+                                                <option value="MIS">MIS</option>
+                                                <option value="Fleet">Fleet</option>
                                             </select>
                                         </td>
                                         <td className="p-3">

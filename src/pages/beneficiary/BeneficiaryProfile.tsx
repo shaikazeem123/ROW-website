@@ -109,7 +109,7 @@ export function BeneficiaryProfilePage() {
     return (
         <div className="space-y-6 pb-12">
             {/* Header */}
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                     <button
                         onClick={() => navigate('/beneficiary/list')}
@@ -118,28 +118,28 @@ export function BeneficiaryProfilePage() {
                         <ArrowLeft size={20} />
                     </button>
                     <div>
-                        <h1 className="text-2xl font-bold text-text-main">{beneficiary.name}</h1>
+                        <h1 className="text-xl md:text-2xl font-bold text-text-main">{beneficiary.name}</h1>
                         <div className="flex flex-wrap items-center gap-2 text-sm text-text-muted mt-1">
                             <span className="flex items-center gap-1">Token: <b className="text-primary">#{beneficiary.token_no || 'N/A'}</b></span>
-                            <span>•</span>
+                            <span className="hidden sm:inline">•</span>
                             <span className="flex items-center gap-1">ID: <b className="text-gray-700">{beneficiary.id?.slice(0, 8) || 'N/A'}</b></span>
-                            <span>•</span>
+                            <span className="hidden sm:inline">•</span>
                             <span className={`px-2 py-0.5 rounded text-[11px] font-black uppercase tracking-wider border ${beneficiary.file_number ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-gray-50 text-gray-500 border-gray-100'}`}>
                                 {beneficiary.file_number ? `File No: ${beneficiary.file_number}` : 'File No: Not Assigned'}
                             </span>
-                            <span>•</span>
+                            <span className="hidden sm:inline">•</span>
                             <span>Registered on {new Date(beneficiary.date_of_registration).toLocaleDateString()}</span>
                         </div>
                     </div>
                 </div>
-                <div className="flex gap-3">
-                    <Link to={`/beneficiary/edit/${id}`}>
-                        <Button variant="outline" className="flex items-center gap-2">
+                <div className="flex gap-3 w-full sm:w-auto">
+                    <Link to={`/beneficiary/edit/${id}`} className="flex-1 sm:flex-none">
+                        <Button variant="outline" className="flex items-center justify-center gap-2 w-full">
                             Edit Profile
                         </Button>
                     </Link>
-                    <Link to={`/services/new?beneficiary_id=${id}`}>
-                        <Button className="flex items-center gap-2">
+                    <Link to={`/services/new?beneficiary_id=${id}`} className="flex-1 sm:flex-none">
+                        <Button className="flex items-center justify-center gap-2 w-full">
                             <Plus size={18} /> New Service
                         </Button>
                     </Link>

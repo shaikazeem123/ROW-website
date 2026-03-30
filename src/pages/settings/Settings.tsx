@@ -124,7 +124,7 @@ export function SettingsPage() {
                 <div className="flex items-center gap-3">
                     <SettingsIcon className="text-primary" size={32} />
                     <div>
-                        <h1 className="text-2xl font-bold text-text-main">Settings</h1>
+                        <h1 className="text-xl md:text-2xl font-bold text-text-main">Settings</h1>
                         <p className="text-text-muted">Manage your account and preferences</p>
                     </div>
                 </div>

@@ -12,6 +12,7 @@ import {
     Ticket,
     Shield,
     ClipboardList,
+    Bus,
 } from 'lucide-react';
 import { NavItem } from './NavItem';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -20,6 +21,8 @@ const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/calendar', label: 'Calendar', icon: Calendar },
     { path: '/tracking', label: 'Live Bus Tracking', icon: MapPin },
+    { path: '/tracking/add-trip', label: 'Add Trip', icon: Bus },
+    { path: '/tracking/history', label: 'Trip History', icon: History },
     { path: '/beneficiary/add', label: 'Add Beneficiary', icon: UserPlus },
     { path: '/beneficiary/list', label: 'Beneficiary List', icon: Users },
     { path: '/services/new', label: 'Service Entry', icon: Stethoscope },
@@ -45,7 +48,7 @@ export function SidebarMenu({ collapsed, mobileOpen, onMobileClose }: SidebarMen
     const filteredItems = navItems.filter(item => {
         if (item.path === '/dashboard') return hasPageAccess('dashboard');
         if (item.path === '/calendar') return hasPageAccess('dashboard');
-        if (item.path === '/tracking') return hasPageAccess('dashboard');
+        if (item.path.startsWith('/tracking')) return hasPageAccess('tracking') || hasPageAccess('dashboard');
         if (item.path.startsWith('/beneficiary')) return hasPageAccess('beneficiary');
         if (item.path.startsWith('/services')) return hasPageAccess('services');
         if (item.path.startsWith('/assessments')) return hasPageAccess('assessments');

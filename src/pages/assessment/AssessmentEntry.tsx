@@ -92,7 +92,7 @@ export function AssessmentEntryPage() {
                     <ClipboardList className="text-primary" size={22} />
                 </div>
                 <div>
-                    <h1 className="text-2xl font-bold text-text-main">Assessment Entry</h1>
+                    <h1 className="text-xl md:text-2xl font-bold text-text-main">Assessment Entry</h1>
                     <p className="text-sm text-text-muted">
                         {initialData
                             ? `Patient: ${initialData.patient_name} (${initialData.patient_id}) — ${initialData.primary_condition}`
@@ -109,7 +109,7 @@ export function AssessmentEntryPage() {
                         <div key={step.num} className="flex items-center flex-1">
                             <button
                                 onClick={() => setActiveStep(step.num)}
-                                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all w-full cursor-pointer
+                                className={`flex items-center gap-2 px-2 sm:px-4 py-2.5 rounded-lg text-sm font-medium transition-all w-full cursor-pointer min-h-[44px]
                                     ${state === 'active' ? 'bg-primary text-white shadow-sm' : ''}
                                     ${state === 'completed' ? 'bg-green-50 text-green-700 hover:bg-green-100' : ''}
                                 `}
@@ -123,7 +123,7 @@ export function AssessmentEntryPage() {
                                 <span className="hidden sm:inline">{step.label}</span>
                             </button>
                             {idx < STEPS.length - 1 && (
-                                <div className="h-0.5 w-4 mx-1 shrink-0 bg-green-300" />
+                                <div className="h-0.5 w-2 sm:w-4 mx-0.5 sm:mx-1 shrink-0 bg-green-300" />
                             )}
                         </div>
                     );

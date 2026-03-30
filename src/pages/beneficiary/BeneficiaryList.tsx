@@ -164,7 +164,7 @@ export function BeneficiaryListPage() {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-text-main">Beneficiary Directory</h1>
+                    <h1 className="text-xl md:text-2xl font-bold text-text-main">Beneficiary Directory</h1>
                     <p className="text-text-muted">Manage all patients across online and offline sessions.</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -227,7 +227,7 @@ export function BeneficiaryListPage() {
                         </div>
                         <div className="flex flex-1 gap-2 w-full md:w-auto">
                             <div className="flex-1">
-                                <label className="block text-[10px] uppercase font-bold text-text-muted mb-1 ml-1">From Date</label>
+                                <label className="block text-[11px] uppercase font-bold text-text-muted mb-1 ml-1">From Date</label>
                                 <input
                                     type="date"
                                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
@@ -236,7 +236,7 @@ export function BeneficiaryListPage() {
                                 />
                             </div>
                             <div className="flex-1">
-                                <label className="block text-[10px] uppercase font-bold text-text-muted mb-1 ml-1">To Date</label>
+                                <label className="block text-[11px] uppercase font-bold text-text-muted mb-1 ml-1">To Date</label>
                                 <input
                                     type="date"
                                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
@@ -286,11 +286,11 @@ export function BeneficiaryListPage() {
                                         {/* Sync Status Badge */}
                                         <div className="absolute top-3 right-10 z-10">
                                             {b.sync_status === 'pending' || b.sync_status === 'failed' ? (
-                                                <div className="flex items-center gap-1 px-2 py-0.5 bg-orange-50 text-orange-600 rounded text-[10px] font-bold border border-orange-100">
+                                                <div className="flex items-center gap-1 px-2 py-0.5 bg-orange-50 text-orange-600 rounded text-[11px] font-bold border border-orange-100">
                                                     <CloudOff size={10} /> Pending
                                                 </div>
                                             ) : (
-                                                <div className="flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-600 rounded text-[10px] font-bold border border-green-100">
+                                                <div className="flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-600 rounded text-[11px] font-bold border border-green-100">
                                                     <CloudCheck size={10} /> Synced
                                                 </div>
                                             )}
@@ -318,7 +318,7 @@ export function BeneficiaryListPage() {
                                             <div className="p-3 bg-primary/10 rounded-full text-primary relative">
                                                 <User size={24} />
                                                 {(b.token_no || b.offline_token) && (
-                                                    <div className={`absolute -top-1 -right-1 text-white text-[10px] font-black w-6 h-6 flex items-center justify-center rounded-full border-2 border-white shadow-sm ${b.sync_status === 'synced' ? 'bg-primary' : 'bg-orange-500'}`}>
+                                                    <div className={`absolute -top-1 -right-1 text-white text-[11px] font-black w-6 h-6 flex items-center justify-center rounded-full border-2 border-white shadow-sm ${b.sync_status === 'synced' ? 'bg-primary' : 'bg-orange-500'}`}>
                                                         {b.token_no || (b.offline_token ? b.offline_token.split('-').pop() : '!')}
                                                     </div>
                                                 )}
@@ -330,7 +330,7 @@ export function BeneficiaryListPage() {
                                                 <p className="text-sm text-text-muted">{b.age} years • {b.gender}</p>
 
                                                 {b.sync_status === 'failed' && (
-                                                    <p className="text-[10px] text-red-500 font-bold mt-1 bg-red-50 px-2 py-0.5 rounded border border-red-100 flex items-center gap-1">
+                                                    <p className="text-[11px] text-red-500 font-bold mt-1 bg-red-50 px-2 py-0.5 rounded border border-red-100 flex items-center gap-1">
                                                         <AlertTriangle size={10} /> Sync Error: {b.error_message?.substring(0, 30)}...
                                                     </p>
                                                 )}
@@ -343,7 +343,7 @@ export function BeneficiaryListPage() {
                                                         <Phone size={14} /> {b.mobile_no || 'No phone'}
                                                     </p>
                                                     <div className="pt-2">
-                                                        <div className={`text-[10px] font-bold px-2 py-1 rounded inline-flex items-center gap-1.5 ${b.file_number ? 'bg-blue-50 text-blue-700 border border-blue-100' : 'bg-gray-50 text-gray-500 border border-gray-100'}`}>
+                                                        <div className={`text-[11px] font-bold px-2 py-1 rounded inline-flex items-center gap-1.5 ${b.file_number ? 'bg-blue-50 text-blue-700 border border-blue-100' : 'bg-gray-50 text-gray-500 border border-gray-100'}`}>
                                                             {b.file_number ? (
                                                                 <>File No: <span className="text-[11px] font-black">{b.file_number}</span></>
                                                             ) : (

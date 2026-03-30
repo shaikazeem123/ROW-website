@@ -130,7 +130,7 @@ export function AddBeneficiaryPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-text-main">Add New Beneficiary</h1>
+                    <h1 className="text-xl md:text-2xl font-bold text-text-main">Add New Beneficiary</h1>
                     <p className="text-text-muted">Register a new patient into the system.</p>
                 </div>
                 <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-sm transition-colors ${isOnline
@@ -307,12 +307,12 @@ export function AddBeneficiaryPage() {
 
                     {/* Actions */}
                     <div className="flex gap-4 pt-4 border-t border-gray-100 justify-end">
-                        <Button type="button" variant="secondary" className="w-32" onClick={() => navigate('/beneficiary/list')}>
+                        <Button type="button" variant="secondary" className="w-full sm:w-32" onClick={() => navigate('/beneficiary/list')}>
                             Cancel
                         </Button>
                         <Button
                             type="submit"
-                            className="w-32 flex items-center justify-center gap-2"
+                            className="w-full sm:w-32 flex items-center justify-center gap-2"
                             disabled={isLoading}
                         >
                             {isLoading ? (
@@ -328,7 +328,7 @@ export function AddBeneficiaryPage() {
             {/* Success Modal Popup */}
             {showSuccessModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden animate-in zoom-in-95 duration-300">
+                    <div className="bg-white rounded-3xl shadow-2xl max-w-[90vw] sm:max-w-sm w-full overflow-hidden animate-in zoom-in-95 duration-300">
                         <div className="bg-primary p-8 text-center text-white">
                             <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-white/30">
                                 <CheckCircle size={40} className="text-white" />

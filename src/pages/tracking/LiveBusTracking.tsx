@@ -295,7 +295,7 @@ export function LiveBusTrackingPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-text-main flex items-center gap-2">
+                    <h1 className="text-xl md:text-2xl font-bold text-text-main flex items-center gap-2">
                         <Bus className="text-primary" size={28} />
                         Bus Tracking Dashboard
                     </h1>
@@ -355,7 +355,7 @@ export function LiveBusTrackingPage() {
                                 className="flex items-center gap-2"
                             >
                                 <Download size={16} />
-                                Export
+                                <span className="hidden sm:inline">Export</span>
                             </Button>
                         )}
                         <Button
@@ -366,9 +366,9 @@ export function LiveBusTrackingPage() {
                             🗑️
                         </Button>
                         <Link to="/tracking/add-trip">
-                            <Button className="flex items-center gap-2">
+                            <Button className="flex items-center gap-2 min-h-[44px]">
                                 <Plus size={16} />
-                                Add Trip
+                                <span className="hidden sm:inline">Add Trip</span>
                             </Button>
                         </Link>
                     </div>
@@ -376,7 +376,7 @@ export function LiveBusTrackingPage() {
             </div>
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card className="p-4 border-l-4 border-l-blue-500">
                     <div className="flex justify-between items-start">
                         <div>

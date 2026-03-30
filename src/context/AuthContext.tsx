@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 .single();
 
             // EMERGENCY BYPASS: Known admin emails that should always have access
-            const adminEmails = ['birej60989@dnsclick.com'];
+            const adminEmails = ['birej60989@dnsclick.co', 'shaikazeem@apd-india.org'];
             const isEmergencyAdmin = userEmail && adminEmails.includes(userEmail.toLowerCase().trim());
 
             if (error) {
@@ -43,6 +43,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     userRole = 'Admin';
                 } else if (rawRole === 'manager') {
                     userRole = 'Manager';
+                } else if (rawRole === 'mis') {
+                    userRole = 'MIS';
+                } else if (rawRole === 'fleet') {
+                    userRole = 'Fleet';
                 } else {
                     userRole = 'Staff';
                 }

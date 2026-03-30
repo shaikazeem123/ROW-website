@@ -63,7 +63,7 @@ export function LoginPage() {
 
         if (loginError) throw loginError;
 
-        navigate('/dashboard');
+        navigate('/');
       } else {
         // Registration Logic with Supabase
         if (formData.username && formData.phone && formData.password && formData.confirmPassword && formData.email) {

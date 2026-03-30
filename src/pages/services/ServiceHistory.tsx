@@ -176,7 +176,7 @@ export function ServiceHistoryPage() {
         <div className="max-w-7xl mx-auto space-y-6 pb-20">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-text-main flex items-center gap-2">
+                    <h1 className="text-xl md:text-2xl font-bold text-text-main flex items-center gap-2">
                         <HistoryIcon className="text-primary" /> Service History Audit
                     </h1>
                     <p className="text-text-muted text-sm mt-1">Review and audit all 21 fields of service entry records.</p>
@@ -186,12 +186,12 @@ export function ServiceHistoryPage() {
                         <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
                     </Button>
                     <Button onClick={handleExport} className="flex items-center gap-2 shadow-lg shadow-primary/20">
-                        <Download size={18} /> Export Audit Excel
+                        <Download size={18} /> <span className="hidden sm:inline">Export Audit Excel</span>
                     </Button>
                 </div>
             </div>
 
-            <Card className="p-6">
+            <Card className="p-4 md:p-6">
                 <div className="flex flex-col md:flex-row gap-4 mb-8">
                     <div className="flex-1 relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
@@ -292,8 +292,8 @@ export function ServiceHistoryPage() {
                         <p className="text-gray-400 font-medium">No service records found for the selected criteria.</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto -mx-6 px-6">
-                        <table className="w-full text-left border-collapse">
+                    <div className="overflow-x-auto -mx-4 px-4 md:-mx-6 md:px-6">
+                        <table className="w-full min-w-[700px] text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-gray-100">
                                     <th className="py-4 font-bold text-[10px] uppercase text-gray-400 tracking-wider pl-4">Schedule Date</th>
@@ -355,7 +355,7 @@ export function ServiceHistoryPage() {
                                         </td>
                                         {isAdmin && (
                                             <td className="py-5 pr-4 text-right">
-                                                <div className="flex items-center justify-end gap-2">
+                                                <div className="flex items-center justify-end gap-2 whitespace-nowrap">
                                                     <Button
                                                         variant="secondary"
                                                         className="h-8 px-2 flex items-center gap-1.5 text-[11px] bg-blue-50 text-blue-600 border-none hover:bg-blue-100"

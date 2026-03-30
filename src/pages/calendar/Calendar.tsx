@@ -118,7 +118,7 @@ export function CalendarPage() {
                     key={i}
                     onClick={() => isValidDay && hasEvents && setSelectedDate(dateStr)}
                     className={`
-                        min-h-[100px] p-2 border border-gray-100 relative
+                        min-h-[60px] md:min-h-[100px] p-1 md:p-2 border border-gray-100 relative
                         ${!isValidDay ? 'bg-gray-50' : hasEvents ? 'bg-white cursor-pointer hover:bg-gray-50' : 'bg-white'}
                         ${isTodayDate ? 'ring-2 ring-primary ring-inset' : ''}
                         ${selectedDate === dateStr ? 'bg-blue-50' : ''}
@@ -175,7 +175,7 @@ export function CalendarPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-text-main flex items-center gap-2">
+                    <h1 className="text-xl md:text-2xl font-bold text-text-main flex items-center gap-2">
                         <CalendarIcon className="text-primary" size={28} />
                         Schedule Calendar
                     </h1>
@@ -252,16 +252,16 @@ export function CalendarPage() {
                     )}
 
                     {/* Day Headers */}
-                    <div className="grid grid-cols-7 gap-0 mb-2">
+                    <div className="grid grid-cols-7 gap-0 mb-2 min-w-[320px]">
                         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                            <div key={day} className="text-center text-sm font-semibold text-text-muted py-2">
+                            <div key={day} className="text-center text-xs md:text-sm font-semibold text-text-muted py-2">
                                 {day}
                             </div>
                         ))}
                     </div>
 
                     {/* Calendar Grid */}
-                    <div className="grid grid-cols-7 gap-0 border-t border-gray-200">
+                    <div className="grid grid-cols-7 gap-0 border-t border-gray-200 min-w-[320px]">
                         {renderCalendar()}
                     </div>
 

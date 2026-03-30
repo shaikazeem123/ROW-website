@@ -235,7 +235,7 @@ export function DashboardPage() {
     ];
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500">
             {/* Global Filters Section */}
             <Card className="p-4 bg-white border-b border-gray-100 shadow-sm sticky top-0 z-10">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -262,9 +262,9 @@ export function DashboardPage() {
                         </div>
 
                         {/* Custom Date Range Picker */}
-                        <div className="flex items-center gap-3 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
+                        <div className="flex flex-wrap items-center gap-3 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
                             <div className="flex flex-col">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase">From</span>
+                                <span className="text-[11px] font-bold text-gray-400 uppercase">From</span>
                                 <input
                                     type="date"
                                     value={globalFilter.startDate}
@@ -274,7 +274,7 @@ export function DashboardPage() {
                             </div>
                             <span className="text-gray-300">|</span>
                             <div className="flex flex-col">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase">To</span>
+                                <span className="text-[11px] font-bold text-gray-400 uppercase">To</span>
                                 <input
                                     type="date"
                                     value={globalFilter.endDate}
@@ -290,7 +290,7 @@ export function DashboardPage() {
             {/* Header Section (Removed extra select date button as we have global filter) */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-text-main">Dashboard Overview</h1>
+                    <h1 className="text-xl md:text-2xl font-bold text-text-main">Dashboard Overview</h1>
                     <p className="text-text-muted">Welcome back, Admin. Here's what's happening today.</p>
                 </div>
                 <div className="flex gap-3">
@@ -388,15 +388,15 @@ export function DashboardPage() {
 
 
             {/* Main Content Areas */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
                 {/* Charts Area */}
-                <div className="lg:col-span-2 space-y-6">
+                <div className="lg:col-span-2 space-y-4 md:space-y-6">
                     <BeneficiaryRegistrationChart timeframe={timeframe} filter={globalFilter} />
                     <ServiceDashboardChart timeframe={timeframe} filter={globalFilter} />
                 </div>
 
                 {/* Side Panel: Scheduled Camps */}
-                <div className="space-y-6">
+                <div className="space-y-4 md:space-y-6">
                     <Card>
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="font-semibold text-lg text-text-main">Upcoming Camps</h3>

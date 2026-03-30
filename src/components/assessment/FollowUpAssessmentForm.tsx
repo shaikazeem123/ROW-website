@@ -19,6 +19,10 @@ const EI_DOMAINS = [
     { key: 'hand_function', label: 'Hand Function', statusKey: 'EI_HandFunction_Status' as keyof typeof DROPDOWNS, goalKey: 'EI_HandFunction_Goal' as keyof typeof DROPDOWNS },
     { key: 'communication', label: 'Communication', statusKey: 'EI_Communication_Status' as keyof typeof DROPDOWNS, goalKey: 'EI_Communication_Goal' as keyof typeof DROPDOWNS },
     { key: 'social', label: 'Social', statusKey: 'EI_Social_Status' as keyof typeof DROPDOWNS, goalKey: 'EI_Social_Goal' as keyof typeof DROPDOWNS },
+    { key: 'self_care', label: 'Self Care', statusKey: 'EI_SelfCare_Status' as keyof typeof DROPDOWNS, goalKey: 'EI_SelfCare_Goal' as keyof typeof DROPDOWNS },
+    { key: 'attention', label: 'Attention & Interest', statusKey: 'EI_Attention_Status' as keyof typeof DROPDOWNS, goalKey: 'EI_Attention_Goal' as keyof typeof DROPDOWNS },
+    { key: 'play', label: 'Play', statusKey: 'EI_Play_Status' as keyof typeof DROPDOWNS, goalKey: 'EI_Play_Goal' as keyof typeof DROPDOWNS },
+    { key: 'intelligence', label: 'Intelligence', statusKey: 'EI_Intelligence_Status' as keyof typeof DROPDOWNS, goalKey: 'EI_Intelligence_Goal' as keyof typeof DROPDOWNS },
 ] as const;
 
 interface Props {
@@ -192,6 +196,14 @@ export function FollowUpAssessmentForm({ initialData }: Props) {
         ei_communication_goal: isEI ? data.ei_communication_goal || null : null,
         ei_social_status: isEI ? data.ei_social_status || null : null,
         ei_social_goal: isEI ? data.ei_social_goal || null : null,
+        ei_self_care_status: isEI ? data.ei_self_care_status || null : null,
+        ei_self_care_goal: isEI ? data.ei_self_care_goal || null : null,
+        ei_attention_status: isEI ? data.ei_attention_status || null : null,
+        ei_attention_goal: isEI ? data.ei_attention_goal || null : null,
+        ei_play_status: isEI ? data.ei_play_status || null : null,
+        ei_play_goal: isEI ? data.ei_play_goal || null : null,
+        ei_intelligence_status: isEI ? data.ei_intelligence_status || null : null,
+        ei_intelligence_goal: isEI ? data.ei_intelligence_goal || null : null,
         ei_service_level: isEI ? data.ei_service_level || null : null,
         ei_outcome: isEI ? data.ei_outcome || null : null,
         ei_assessor_name: isEI ? data.ei_assessor_name || null : null,
@@ -691,11 +703,11 @@ export function FollowUpAssessmentForm({ initialData }: Props) {
                     )}
 
                     {/* Submit / Cancel */}
-                    <div className="flex justify-end gap-3">
-                        <Button variant="outline" onClick={closeForm}>
+                    <div className="flex flex-col sm:flex-row justify-end gap-3">
+                        <Button variant="outline" onClick={closeForm} className="w-full sm:w-auto">
                             Cancel
                         </Button>
-                        <Button onClick={handleSubmit} disabled={isSaving}>
+                        <Button onClick={handleSubmit} disabled={isSaving} className="w-full sm:w-auto">
                             {isSaving ? <Loader2 size={16} className="animate-spin mr-2 inline" /> : <Save size={16} className="mr-2 inline" />}
                             {isEditMode ? 'Update Session' : 'Save Session'}
                         </Button>

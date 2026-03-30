@@ -154,7 +154,7 @@ export function EditBeneficiaryPage() {
                     <ArrowLeft size={20} />
                 </button>
                 <div>
-                    <h1 className="text-2xl font-bold text-text-main">Edit Beneficiary</h1>
+                    <h1 className="text-xl md:text-2xl font-bold text-text-main">Edit Beneficiary</h1>
                     <p className="text-text-muted">Update details for {formData.name}</p>
                 </div>
             </div>
@@ -328,12 +328,12 @@ export function EditBeneficiaryPage() {
 
                     {/* Actions */}
                     <div className="flex gap-4 pt-6 border-t border-gray-100 justify-end">
-                        <Button type="button" variant="outline" onClick={() => navigate(-1)} className="px-8">
+                        <Button type="button" variant="outline" onClick={() => navigate(-1)} className="w-full sm:w-auto px-8">
                             Cancel
                         </Button>
                         <Button
                             type="submit"
-                            className="flex items-center gap-2 px-8"
+                            className="flex items-center gap-2 w-full sm:w-auto px-8"
                             disabled={isSaving}
                         >
                             {isSaving ? (

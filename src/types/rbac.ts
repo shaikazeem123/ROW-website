@@ -1,4 +1,4 @@
-export type UserRole = 'Admin' | 'Manager' | 'Staff';
+export type UserRole = 'Admin' | 'Manager' | 'Staff' | 'MIS' | 'Fleet';
 
 export interface PermissionRules {
     canManageUsers: boolean;
@@ -44,6 +44,26 @@ export const ROLE_PERMISSIONS: Record<UserRole, PermissionRules> = {
         // "Staff Access only to: Beneficiary pages, Service pages"
         // I will follow that strict rule.
         accessiblePages: ['beneficiary', 'services', 'settings', 'token-management', 'assessments'] // Settings for their own profile
+    },
+    MIS: {
+        canManageUsers: false,
+        canViewAdminPage: false,
+        canEditSettings: false,
+        canExportData: true,
+        canDeleteRecords: false,
+        canApproveRequests: false,
+        canImportFileNumbers: true,
+        accessiblePages: ['beneficiary', 'services', 'assessments']
+    },
+    Fleet: {
+        canManageUsers: false,
+        canViewAdminPage: false,
+        canEditSettings: false,
+        canExportData: false,
+        canDeleteRecords: false,
+        canApproveRequests: false,
+        canImportFileNumbers: false,
+        accessiblePages: ['tracking']
     }
 };
 

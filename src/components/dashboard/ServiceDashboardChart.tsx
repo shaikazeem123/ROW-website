@@ -69,7 +69,7 @@ export function ServiceDashboardChart({ timeframe, filter }: Props) {
                             <Activity size={18} />
                         </div>
                         <div>
-                            <p className="text-[10px] text-primary font-bold uppercase tracking-wider mb-0.5">Total Services</p>
+                            <p className="text-[11px] text-primary font-bold uppercase tracking-wider mb-0.5">Total Services</p>
                             <p className="text-xl font-black text-primary">{summary.totalServices}</p>
                         </div>
                     </div>
@@ -81,7 +81,7 @@ export function ServiceDashboardChart({ timeframe, filter }: Props) {
                             <Users size={18} />
                         </div>
                         <div>
-                            <p className="text-[10px] text-blue-700 font-bold uppercase tracking-wider mb-0.5">Beneficiaries</p>
+                            <p className="text-[11px] text-blue-700 font-bold uppercase tracking-wider mb-0.5">Beneficiaries</p>
                             <p className="text-xl font-black text-blue-900">{summary.totalBeneficiaries}</p>
                         </div>
                     </div>
@@ -93,7 +93,7 @@ export function ServiceDashboardChart({ timeframe, filter }: Props) {
                             <TrendingUp size={18} />
                         </div>
                         <div>
-                            <p className="text-[10px] text-purple-700 font-bold uppercase tracking-wider mb-0.5">Top Service</p>
+                            <p className="text-[11px] text-purple-700 font-bold uppercase tracking-wider mb-0.5">Top Service</p>
                             <p className="text-sm font-bold text-purple-900 truncate max-w-[120px]" title={summary.mostActiveService}>
                                 {summary.mostActiveService}
                             </p>
@@ -107,7 +107,7 @@ export function ServiceDashboardChart({ timeframe, filter }: Props) {
                             <Filter size={18} />
                         </div>
                         <div>
-                            <p className="text-[10px] text-orange-700 font-bold uppercase tracking-wider mb-0.5">Avg/Day</p>
+                            <p className="text-[11px] text-orange-700 font-bold uppercase tracking-wider mb-0.5">Avg/Day</p>
                             <p className="text-xl font-black text-orange-900">{summary.avgServicesPerDay}</p>
                         </div>
                     </div>
@@ -115,7 +115,7 @@ export function ServiceDashboardChart({ timeframe, filter }: Props) {
             </div>
 
             {/* Chart Area */}
-            <div className="h-[350px] w-full mt-4">
+            <div className="h-[250px] md:h-[350px] w-full mt-4">
                 {loading ? (
                     <div className="h-full flex items-center justify-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -155,7 +155,7 @@ export function ServiceDashboardChart({ timeframe, filter }: Props) {
                                 radius={[4, 4, 0, 0]}
                                 barSize={timeframe === 'daily' ? 20 : 40}
                             >
-                                <LabelList dataKey="count" position="top" style={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }} />
+                                <LabelList dataKey="count" position="top" style={{ fill: '#64748b', fontSize: 11, fontWeight: 700 }} />
                             </Bar>
                         </BarChart>
                     </ResponsiveContainer>

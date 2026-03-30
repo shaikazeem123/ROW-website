@@ -125,6 +125,16 @@ export const DROPDOWNS = {
         'Level 5 – Referral',
     ],
     EI_Outcome: ['Improved', 'Slight Improvement', 'No Change', 'Needs Referral'],
+
+    // ── Early Intervention — Additional Domains ──
+    EI_SelfCare_Status: ['Dependent', 'Requires assistance', 'Partially independent', 'Independent'],
+    EI_SelfCare_Goal: ['Improve feeding skills', 'Improve dressing skills', 'Improve toileting skills', 'Increase independence in ADLs'],
+    EI_Attention_Status: ['Poor (no engagement)', 'Limited (fleeting attention)', 'Inconsistent engagement', 'Sustains briefly', 'Sustains well'],
+    EI_Attention_Goal: ['Improve eye contact', 'Increase attention span', 'Improve sustained engagement', 'Increase interest in activities/play', 'Encourage task participation', 'Reduce distractibility', 'Develop interactive/social engagement'],
+    EI_Play_Status: ['No interest', 'Limited interest', 'Engages with prompting', 'Independent play', 'Interactive/social play'],
+    EI_Play_Goal: ['Increase interest in play', 'Improve object interaction', 'Develop functional play', 'Encourage interactive/social play'],
+    EI_Intelligence_Status: ['Significant delay', 'Moderate delay', 'Mild delay', 'Age-appropriate'],
+    EI_Intelligence_Goal: ['Improve understanding (commands)', 'Improve problem-solving', 'Improve memory & recall', 'Improve cause-effect learning'],
 };
 
 /** Convert a string array to {value, label} options for the Select component */
