@@ -13,10 +13,11 @@ import {
     ClipboardList,
     Bus,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { NavItem } from './NavItem';
 import { usePermissions } from '@/hooks/usePermissions';
 
-type NavItemEntry = { type: 'item'; path: string; label: string; icon: React.ComponentType<{ size?: number; className?: string }> };
+type NavItemEntry = { type: 'item'; path: string; label: string; icon: LucideIcon };
 type NavSectionEntry = { type: 'section'; label: string };
 type NavEntry = NavItemEntry | NavSectionEntry;
 

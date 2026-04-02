@@ -1,7 +1,5 @@
 
 
-import React from 'react';
-
 const options = {
     assessmentPeriod: ['Initial Assessment', 'Follow-up', 'Reassessment', 'Discharge'],
     diagnosis: ['COPD', 'Asthma', 'Bronchiectasis', 'Interstitial Lung Disease', 'Pneumonia', 'Post-COVID Condition', 'Tuberculosis', 'Restrictive Lung Disease', 'Other'],

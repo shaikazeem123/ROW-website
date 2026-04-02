@@ -34,7 +34,7 @@ export function InitialAssessmentForm({ data, onChange, onSaved, isEdit }: Props
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
     const suggestionRef = useRef<HTMLDivElement>(null);
-    const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
     // Close dropdown on outside click
     useEffect(() => {
