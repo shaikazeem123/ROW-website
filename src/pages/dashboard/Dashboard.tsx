@@ -5,10 +5,8 @@ import {
     TrendingUp,
     Stethoscope,
     ArrowUpRight,
-    Bell,
     ArrowRight,
-    Filter,
-    AlertTriangle
+    Filter
 } from 'lucide-react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -43,8 +41,8 @@ export function DashboardPage() {
     });
 
     const [upcomingCamps, setUpcomingCamps] = useState<MappedCamp[]>([]);
-    const [upcomingAlerts, setUpcomingAlerts] = useState<UpcomingAlert[]>([]);
-    const [missedCampCount, setMissedCampCount] = useState(0);
+    const [, setUpcomingAlerts] = useState<UpcomingAlert[]>([]);
+    const [, setMissedCampCount] = useState(0);
 
     // Global Filter State
     const [timeframe, setTimeframe] = useState<TimeFrame>('all');
@@ -299,61 +297,6 @@ export function DashboardPage() {
                     </Button>
                 </div>
             </div>
-
-            {/* Upcoming Camp Alerts (Next 7 Days) */}
-            {upcomingAlerts.length > 0 && (
-                <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4 shadow-sm">
-                    <div className="flex items-start gap-3">
-                        <div className="p-2 bg-blue-500 rounded-lg shrink-0">
-                            <Bell className="text-white" size={20} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-blue-900 mb-1">
-                                Upcoming Camps — Next 7 Days
-                            </h3>
-                            <div className="space-y-1 mb-3">
-                                {upcomingAlerts.map((alert, i) => (
-                                    <p key={i} className="text-sm text-blue-700">
-                                        <span className="font-semibold">{alert.location}</span> — {alert.date}
-                                        {alert.daysUntil === 0 && <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-bold">TODAY</span>}
-                                        {alert.daysUntil === 1 && <span className="ml-2 px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs font-bold">TOMORROW</span>}
-                                        {alert.daysUntil > 1 && <span className="ml-2 text-xs text-blue-500">in {alert.daysUntil} days</span>}
-                                    </p>
-                                ))}
-                            </div>
-                            <Link to="/calendar">
-                                <Button variant="secondary" className="text-sm flex items-center gap-2 bg-white hover:bg-blue-50 text-blue-700">
-                                    View Full Calendar <ArrowRight size={16} />
-                                </Button>
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Missed Camps Warning */}
-            {missedCampCount > 0 && (
-                <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-lg p-4 shadow-sm">
-                    <div className="flex items-start gap-3">
-                        <div className="p-2 bg-red-500 rounded-lg shrink-0">
-                            <AlertTriangle className="text-white" size={20} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-red-900 mb-1">
-                                {missedCampCount} Missed Camp{missedCampCount !== 1 ? 's' : ''}
-                            </h3>
-                            <p className="text-sm text-red-700 mb-3">
-                                Scheduled camps with no trip logged. Please review and update trip records.
-                            </p>
-                            <Link to="/calendar">
-                                <Button variant="secondary" className="text-sm flex items-center gap-2 bg-white hover:bg-red-50 text-red-700">
-                                    Review in Calendar <ArrowRight size={16} />
-                                </Button>
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

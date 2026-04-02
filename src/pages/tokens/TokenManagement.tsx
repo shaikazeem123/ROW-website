@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { DailyTokenService, type DailyToken } from '@/services/dailyTokenService';
 import {
     Users,
+    UserPlus,
     Search,
     Printer,
     RefreshCw,
@@ -473,6 +475,14 @@ Area: ${token.area || '-'}
                             >
                                 {loading ? 'Generating...' : 'Generate & Print'}
                             </button>
+
+                            <Link
+                                to="/beneficiary/add"
+                                className="w-full mt-3 border border-primary text-primary py-2 rounded-lg hover:bg-primary hover:text-white transition-colors flex items-center justify-center gap-2"
+                            >
+                                <UserPlus size={16} />
+                                Add Beneficiary
+                            </Link>
                         </div>
                     </div>
 

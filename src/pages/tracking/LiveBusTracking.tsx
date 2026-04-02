@@ -120,6 +120,7 @@ export function LiveBusTrackingPage() {
     useEffect(() => {
         loadTrips();
         loadCamps();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
@@ -202,7 +203,7 @@ export function LiveBusTrackingPage() {
                 .map(c => c.trip_id)
                 .filter((id): id is string => !!id);
 
-            let tripsMap = new Map<string, Trip>();
+            const tripsMap = new Map<string, Trip>();
             if (tripIds.length > 0) {
                 const { data: tripRows } = await supabase
                     .from('trips')

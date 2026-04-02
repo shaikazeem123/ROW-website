@@ -172,3 +172,22 @@ export async function fetchMissedCamps(): Promise<CalendarEvent[]> {
         isActive: true,
     }));
 }
+
+/**
+ * Update the status of a schedule entry (mark as completed or missed)
+ */
+export async function updateScheduleStatus(
+    scheduleId: string,
+    status: 'completed' | 'missed' | 'scheduled' | 'cancelled'
+): Promise<boolean> {
+    const { error } = await supabase
+        .from('monthly_schedules')
+        .update({ status })
+        .eq('id', scheduleId);
+
+    if (error) {
+        console.error('Error updating schedule status:', error);
+        return false;
+    }
+    return true;
+}

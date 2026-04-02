@@ -1,5 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { createBrowserRouter } from 'react-router-dom';
 import { AppLayout } from '../components/layout/AppLayout';
 import { LoginPage } from '../pages/auth/Login';
 import { UpdatePasswordPage } from '../pages/auth/UpdatePassword';
@@ -24,13 +23,7 @@ import { AssessmentHistoryPage } from '../pages/assessment/AssessmentHistory';
 import { AssessmentViewPage } from '../pages/assessment/AssessmentView';
 import { NotFoundPage } from '../pages/NotFound';
 import { ProtectedRoute } from './ProtectedRoute';
-
-function DefaultRedirect() {
-    const { role } = useAuth();
-    if (role === 'MIS') return <Navigate to="/beneficiary/list" replace />;
-    if (role === 'Fleet') return <Navigate to="/tracking" replace />;
-    return <Navigate to="/dashboard" replace />;
-}
+import { DefaultRedirect } from './DefaultRedirect';
 
 export const router = createBrowserRouter([
     {

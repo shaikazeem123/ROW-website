@@ -141,7 +141,10 @@ export function BeneficiaryListPage() {
     };
 
     const handleExport = () => {
-        exportBeneficiariesToExcel(filteredBeneficiaries);
+        exportBeneficiariesToExcel(
+            filteredBeneficiaries,
+            (startDate || endDate) ? { startDate, endDate } : undefined
+        );
     };
 
     const filteredBeneficiaries = beneficiaries.filter(b => {
@@ -187,7 +190,7 @@ export function BeneficiaryListPage() {
                         className="flex items-center gap-2"
                         disabled={isLoading || filteredBeneficiaries.length === 0}
                     >
-                        <Download size={18} /> Export Excel
+                        <Download size={18} /> Export Excel ({filteredBeneficiaries.length})
                     </Button>
                     {canImportFileNumbers && (
                         <Button

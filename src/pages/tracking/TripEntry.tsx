@@ -19,7 +19,7 @@ export function TripEntryPage() {
 
     const [formData, setFormData] = useState({
         date: new Date().toISOString().split('T')[0],
-        busNumber: 'Bus 1',
+        busNumber: 'BUS ABB',
         driverName: '',
         assistantName: '',
         odometerStart: '',
@@ -366,14 +366,14 @@ export function TripEntryPage() {
                                 required
                             />
                             <Select
-                                label="Bus Number"
-                                name="busNumber"
+                                label="Bus Name"
+                                name="busName"
                                 value={formData.busNumber}
                                 onChange={handleChange}
                                 options={[
-                                    { value: 'Bus 1', label: 'Bus 1' },
-                                    { value: 'Bus 2', label: 'Bus 2' },
-                                    { value: 'Bus 3', label: 'Bus 3' },
+                                    { value: 'BUS ABB', label: 'BUS ABB' },
+                                    { value: 'BUS Juniper', label: 'BUS Juniper' },
+                                    { value: 'BUS Brigade', label: 'BUS Brigade' },
                                 ]}
                             />
                             <Select
@@ -386,6 +386,8 @@ export function TripEntryPage() {
                                     { value: 'Follow-up', label: 'Follow-up Session' },
                                     { value: 'Maintenance', label: 'Maintenance Trip' },
                                     { value: 'Emergency', label: 'Emergency' },
+                                    { value: 'Medical Camp', label: 'Medical Camp' },
+                                    { value: 'External Programs ', label: 'External Programs' },
                                     { value: 'Other', label: 'Other' },
                                 ]}
                             />

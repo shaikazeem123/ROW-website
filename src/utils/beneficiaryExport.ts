@@ -3,7 +3,10 @@ import ExcelJS from 'exceljs';
 /**
  * Utility to export beneficiaries data to detailed Excel (.xlsx) with styling
  */
-export const exportBeneficiariesToExcel = async (data: Record<string, unknown>[]) => {
+export const exportBeneficiariesToExcel = async (
+    data: Record<string, unknown>[],
+    dateRange?: { startDate?: string; endDate?: string }
+) => {
     if (!data || data.length === 0) return;
 
     // Create a new workbook and add a worksheet
@@ -80,10 +83,21 @@ export const exportBeneficiariesToExcel = async (data: Record<string, unknown>[]
     });
     headerRow.height = 30;
 
+    // Add date range info row if filtered
+    if (dateRange?.startDate || dateRange?.endDate) {
+        worksheet.addRow({});
+        const rangeText = `Filtered: ${dateRange.startDate || 'Start'} to ${dateRange.endDate || 'Present'} | Total Records: ${data.length}`;
+        const infoRow = worksheet.addRow({ name: rangeText });
+        infoRow.getCell(2).font = { italic: true, color: { argb: 'FF666666' }, size: 10 };
+    }
+
     // Generate Excel file
     const buffer = await workbook.xlsx.writeBuffer();
     const date = new Date().toISOString().split('T')[0];
-    const fileName = `Beneficiary_Report_${date}.xlsx`;
+    const rangeSuffix = dateRange?.startDate || dateRange?.endDate
+        ? `_${dateRange.startDate || 'start'}_to_${dateRange.endDate || 'present'}`
+        : '';
+    const fileName = `Beneficiary_Report_${date}${rangeSuffix}.xlsx`;
 
     // Create blob and trigger download
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });

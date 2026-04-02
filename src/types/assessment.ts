@@ -80,6 +80,12 @@ export interface ClinicalAssessment {
     ei_outcome: string | null;
     ei_assessor_name: string | null;
     ei_remarks: string | null;
+    // Treatment Plan
+    exercise_therapy: string[] | null;
+    electro_therapy: string[] | null;
+    home_programme: string[] | null;
+    orthosis: string[] | null;
+    prosthesis: string[] | null;
     created_at?: string;
 }
 
@@ -96,6 +102,8 @@ export interface FollowUpAssessment {
     strength: string | null;
     vas_previous: number | null;
     vas_current: number | null;
+    vas_post: number | null;
+    vas_category_post: string | null;
     // Neuro
     neuro_strength: string | null;
     balance: string | null;

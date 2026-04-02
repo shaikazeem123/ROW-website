@@ -1,7 +1,7 @@
 export const DROPDOWNS = {
     Gender: ['Male', 'Female', 'Other'],
 
-    Condition: ['Pain', 'Neuro', 'Pulmonary', 'Post-Operative', 'Disability', 'Amputation', 'Early Intervention Assessment'],
+    Condition: ['Neuro Muscular Painful Condition', 'Neurological Condition', 'Pulmonary Condition', 'Post Operative Condition', 'Disability', 'Amputation', 'Early Intervention Assessment'],
 
     ChiefComplaint: [
         'Joint pain', 'Back pain', 'Neck pain', 'Post injury pain',

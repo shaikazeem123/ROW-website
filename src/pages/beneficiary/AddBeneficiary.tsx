@@ -37,7 +37,7 @@ export function AddBeneficiaryPage() {
         pincode: '',
         mobileNo: '',
         purposeOfVisit: 'Assessment',
-        disabilityType: 'Locomotor',
+        disabilityType: 'Locomotor Disability',
         program: 'Rehab on Wheels',
         donor: '',
         economicStatus: 'BPL',
@@ -263,7 +263,8 @@ export function AddBeneficiaryPage() {
                                     { value: 'Assessment', label: 'Assessment' },
                                     { value: 'Treatment', label: 'Treatment' },
                                     { value: 'Follow-up', label: 'Follow-up' },
-                                    { value: 'Aid Distribution', label: 'Aid Distribution' },
+                                    { value: ' Mobility Aid Distribution', label: 'Mobility Aid Distribution' },
+                                    { value: 'Referal', label: 'Referal' },
                                 ]}
                             />
                             <Select
@@ -272,12 +273,27 @@ export function AddBeneficiaryPage() {
                                 value={formData.disabilityType}
                                 onChange={handleChange}
                                 options={[
-                                    { value: 'Locomotor', label: 'Locomotor' },
-                                    { value: 'Visual', label: 'Visual' },
-                                    { value: 'Hearing', label: 'Hearing' },
-                                    { value: 'Speech', label: 'Speech' },
-                                    { value: 'Multiple', label: 'Multiple' },
-                                    { value: 'None', label: 'None' },
+                                    { value: 'Neuro Muscular Painful Condition', label: 'Neuro Muscular Painful Condition' },
+                                    { value: 'Chronic Neurological Disorder', label: 'Chronic Neurological Disorder' },
+                                    { value: 'Delay Development', label: 'Delay Development' },
+                                    { value: 'Down Syndrome', label: 'Down Syndrome' },
+                                    { value: 'Dwarfism', label: 'Dwarfism' },
+                                    { value: 'Global Developmental Delay', label: 'Global Developmental Delay' },
+                                    { value: 'Hearing Impairment', label: 'Hearing Impairment' },
+                                    { value: 'Intellectual Disability', label: 'Intellectual Disability' },
+                                    { value: 'Learning Disability', label: 'Learning Disability' },
+                                    { value: 'Locomotor Disability', label: 'Locomotor Disability' },
+                                    { value: 'Low Vision', label: 'Low Vision' },
+                                    { value: 'Multiple Disability', label: 'Multiple Disability' },
+                                    { value: 'Muscular Dystrophy', label: 'Muscular Dystrophy' },
+                                    { value: 'Non Disable', label: 'Non Disable' },
+                                    { value: "Parkinson's Disease", label: "Parkinson's Disease" },
+                                    { value: 'Speech & Hearing Impaired', label: 'Speech & Hearing Impaired' },
+                                    { value: 'Speech Impairment', label: 'Speech Impairment' },
+                                    { value: 'Spinal Bifida', label: 'Spinal Bifida' },
+                                    { value: 'Spinal Cord Injury', label: 'Spinal Cord Injury' },
+                                    { value: 'Thalassemia', label: 'Thalassemia' },
+                                    { value: 'Visual Impaired', label: 'Visual Impaired' },
                                 ]}
                             />
                             <Select

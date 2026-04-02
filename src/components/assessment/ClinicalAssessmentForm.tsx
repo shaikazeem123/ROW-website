@@ -7,7 +7,7 @@ import { DROPDOWNS, toOptions } from '@/constants/assessmentDropdowns';
 import { getVASCategory } from '@/utils/assessmentLogic';
 import type { ClinicalAssessment, InitialAssessment } from '@/types/assessment';
 import { assessmentService } from '@/services/assessmentService';
-import { Activity, Save, Loader2, Baby } from 'lucide-react';
+import { Activity, Save, Loader2, Baby, Dumbbell, Zap, Home, Shield, Wrench } from 'lucide-react';
 
 const EI_DOMAINS = [
     { key: 'head_control', label: 'Head Control', statusKey: 'EI_HeadControl_Status' as keyof typeof DROPDOWNS, goalKey: 'EI_HeadControl_Goal' as keyof typeof DROPDOWNS },
@@ -24,6 +24,58 @@ const EI_DOMAINS = [
     { key: 'play', label: 'Play', statusKey: 'EI_Play_Status' as keyof typeof DROPDOWNS, goalKey: 'EI_Play_Goal' as keyof typeof DROPDOWNS },
     { key: 'intelligence', label: 'Intelligence', statusKey: 'EI_Intelligence_Status' as keyof typeof DROPDOWNS, goalKey: 'EI_Intelligence_Goal' as keyof typeof DROPDOWNS },
 ] as const;
+
+const TREATMENT_PLAN = {
+    exerciseTherapy: [
+        'Strengthening Exercises',
+        'Stretching Exercises',
+        'Range of Motion (ROM) Exercises',
+        'Balance Training',
+        'Coordination Exercises',
+        'Gait Training',
+        'Functional Training',
+        'Postural Correction Exercises',
+        'Breathing Exercises',
+        'Endurance Training',
+    ],
+    electroTherapy: [
+        'TENS',
+        'IFT',
+        'Ultrasound Therapy (UST)',
+        'LASER Therapy',
+        'NMES (Neuromuscular Electrical Stimulation)',
+        'FES (Functional Electrical Stimulation)',
+        'Intermittent Traction',
+        'Continuous Traction',
+    ],
+    homeProgramme: [
+        'Strengthening',
+        'Stretching',
+        'ROM',
+        'Balance',
+        'Functional Activities',
+    ],
+    orthosis: [
+        'Cervical Collar',
+        'Shoulder Support',
+        'Elbow Brace',
+        'Wrist Splint',
+        'Hand Splint',
+        'Spinal Brace (LS Belt / TLSO)',
+        'Knee Brace',
+        'Ankle Foot Orthosis (AFO)',
+        'Knee Ankle Foot Orthosis (KAFO)',
+        'Foot Orthosis (Insoles)',
+    ],
+    prosthesis: [
+        'Upper Limb Prosthesis',
+        'Lower Limb Prosthesis',
+        'Below Elbow Prosthesis',
+        'Above Elbow Prosthesis',
+        'Below Knee Prosthesis',
+        'Above Knee Prosthesis',
+    ],
+};
 
 interface Props {
     initialData: InitialAssessment | null;
@@ -48,6 +100,23 @@ export function ClinicalAssessmentForm({ initialData, existingClinical, onSaved 
         };
     });
 
+    const [treatmentPlan, setTreatmentPlan] = useState<{
+        exercise_therapy: string[];
+        electro_therapy: string[];
+        home_programme: string[];
+        orthosis: string[];
+        prosthesis: string[];
+    }>(() => {
+        const existing = existingClinical as Record<string, unknown> | null;
+        return {
+            exercise_therapy: (existing?.exercise_therapy as string[]) || [],
+            electro_therapy: (existing?.electro_therapy as string[]) || [],
+            home_programme: (existing?.home_programme as string[]) || [],
+            orthosis: (existing?.orthosis as string[]) || [],
+            prosthesis: (existing?.prosthesis as string[]) || [],
+        };
+    });
+
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isSaving, setIsSaving] = useState(false);
 
@@ -64,6 +133,15 @@ export function ClinicalAssessmentForm({ initialData, existingClinical, onSaved 
         if (errors[field]) setErrors(prev => { const n = { ...prev }; delete n[field]; return n; });
     };
 
+    const toggleTreatment = (category: 'exercise_therapy' | 'electro_therapy' | 'home_programme' | 'orthosis' | 'prosthesis', item: string) => {
+        setTreatmentPlan(prev => ({
+            ...prev,
+            [category]: prev[category].includes(item)
+                ? prev[category].filter(i => i !== item)
+                : [...prev[category], item],
+        }));
+    };
+
     const toggleSymptom = (symptom: string) => {
         const current = data.pulmonary_symptoms || [];
         const updated = current.includes(symptom)
@@ -75,19 +153,18 @@ export function ClinicalAssessmentForm({ initialData, existingClinical, onSaved 
     const validate = (): boolean => {
         const e: Record<string, string> = {};
 
-        if (condition === 'Pain') {
+        if (condition === 'Neuro Muscular Painful Condition') {
             if (!data.rom_aaos) e.rom_aaos = 'ROM is required';
             if (!data.strength_mmt) e.strength_mmt = 'Strength is required';
             if (data.vas_pre == null || data.vas_pre < 0 || data.vas_pre > 10) e.vas_pre = 'VAS Pre must be 0–10';
-            if (data.vas_post == null || data.vas_post < 0 || data.vas_post > 10) e.vas_post = 'VAS Post must be 0–10';
         }
-        if (condition === 'Neuro') {
+        if (condition === 'Neurological Condition') {
             if (!data.neuro_strength) e.neuro_strength = 'Strength is required';
             if (!data.neuro_balance) e.neuro_balance = 'Balance is required';
             if (!data.coordination_test) e.coordination_test = 'Coordination test is required';
             if (!data.coordination_severity) e.coordination_severity = 'Severity is required';
         }
-        if (condition === 'Pulmonary') {
+        if (condition === 'Pulmonary Condition') {
             if (!data.cough) e.cough = 'Cough is required';
             if (!data.pulmonary_symptoms?.length) e.pulmonary_symptoms = 'Select at least one symptom';
             if (!data.dyspnea_mrmc) e.dyspnea_mrmc = 'Dyspnea is required';
@@ -97,7 +174,7 @@ export function ClinicalAssessmentForm({ initialData, existingClinical, onSaved 
             if (!data.fim_locomotion) e.fim_locomotion = 'FIM Locomotion is required';
             if (!data.fim_mobility) e.fim_mobility = 'FIM Mobility is required';
         }
-        if (condition === 'Post-Operative') {
+        if (condition === 'Post Operative Condition') {
             if (!data.postop_surgery_type) e.postop_surgery_type = 'Surgery type is required';
             if (!data.weight_bearing_status) e.weight_bearing_status = 'Weight bearing status is required';
             if (!data.functional_mobility_level) e.functional_mobility_level = 'Mobility level is required';
@@ -114,7 +191,6 @@ export function ClinicalAssessmentForm({ initialData, existingClinical, onSaved 
                 if (!data[statusField as keyof typeof data]) e[statusField] = `${domain.label} status is required`;
             }
             if (!data.ei_service_level) e.ei_service_level = 'Service level is required';
-            if (!data.ei_outcome) e.ei_outcome = 'Outcome is required';
             if (!data.ei_assessor_name?.trim()) e.ei_assessor_name = 'Assessor name is required';
         }
 
@@ -133,29 +209,29 @@ export function ClinicalAssessmentForm({ initialData, existingClinical, onSaved 
                 side_of_limb_affected: data.side_of_limb_affected || null,
                 joint_involved: data.joint_involved || null,
                 // Pain
-                rom_aaos: condition === 'Pain' ? data.rom_aaos || null : null,
-                strength_mmt: condition === 'Pain' ? data.strength_mmt || null : null,
-                vas_pre: condition === 'Pain' ? Number(data.vas_pre) : null,
-                vas_category_pre: condition === 'Pain' ? getVASCategory(Number(data.vas_pre)) : null,
-                vas_post: condition === 'Pain' ? Number(data.vas_post) : null,
-                vas_category_post: condition === 'Pain' ? getVASCategory(Number(data.vas_post)) : null,
+                rom_aaos: condition === 'Neuro Muscular Painful Condition' ? data.rom_aaos || null : null,
+                strength_mmt: condition === 'Neuro Muscular Painful Condition' ? data.strength_mmt || null : null,
+                vas_pre: condition === 'Neuro Muscular Painful Condition' ? Number(data.vas_pre) : null,
+                vas_category_pre: condition === 'Neuro Muscular Painful Condition' ? getVASCategory(Number(data.vas_pre)) : null,
+                vas_post: null,
+                vas_category_post: null,
                 // Neuro
-                neuro_strength: condition === 'Neuro' ? data.neuro_strength || null : null,
-                neuro_balance: condition === 'Neuro' ? data.neuro_balance || null : null,
-                coordination_test: condition === 'Neuro' ? data.coordination_test || null : null,
-                coordination_severity: condition === 'Neuro' ? data.coordination_severity || null : null,
+                neuro_strength: condition === 'Neurological Condition' ? data.neuro_strength || null : null,
+                neuro_balance: condition === 'Neurological Condition' ? data.neuro_balance || null : null,
+                coordination_test: condition === 'Neurological Condition' ? data.coordination_test || null : null,
+                coordination_severity: condition === 'Neurological Condition' ? data.coordination_severity || null : null,
                 // Pulmonary
-                cough: condition === 'Pulmonary' ? data.cough || null : null,
-                pulmonary_symptoms: condition === 'Pulmonary' ? data.pulmonary_symptoms || null : null,
-                dyspnea_mrmc: condition === 'Pulmonary' ? data.dyspnea_mrmc || null : null,
+                cough: condition === 'Pulmonary Condition' ? data.cough || null : null,
+                pulmonary_symptoms: condition === 'Pulmonary Condition' ? data.pulmonary_symptoms || null : null,
+                dyspnea_mrmc: condition === 'Pulmonary Condition' ? data.dyspnea_mrmc || null : null,
                 // Disability
                 disability_type: condition === 'Disability' ? data.disability_type || null : null,
                 fim_locomotion: condition === 'Disability' ? data.fim_locomotion || null : null,
                 fim_mobility: condition === 'Disability' ? data.fim_mobility || null : null,
                 // Post-Op
-                postop_surgery_type: condition === 'Post-Operative' ? data.postop_surgery_type || null : null,
-                weight_bearing_status: condition === 'Post-Operative' ? data.weight_bearing_status || null : null,
-                functional_mobility_level: condition === 'Post-Operative' ? data.functional_mobility_level || null : null,
+                postop_surgery_type: condition === 'Post Operative Condition' ? data.postop_surgery_type || null : null,
+                weight_bearing_status: condition === 'Post Operative Condition' ? data.weight_bearing_status || null : null,
+                functional_mobility_level: condition === 'Post Operative Condition' ? data.functional_mobility_level || null : null,
                 // Amputation
                 amputation_level: condition === 'Amputation' ? data.amputation_level || null : null,
                 residual_limb_condition: condition === 'Amputation' ? data.residual_limb_condition || null : null,
@@ -192,6 +268,12 @@ export function ClinicalAssessmentForm({ initialData, existingClinical, onSaved 
                 ei_outcome: isEI ? data.ei_outcome || null : null,
                 ei_assessor_name: isEI ? data.ei_assessor_name || null : null,
                 ei_remarks: isEI ? data.ei_remarks || null : null,
+                // Treatment Plan
+                exercise_therapy: treatmentPlan.exercise_therapy.length > 0 ? treatmentPlan.exercise_therapy : null,
+                electro_therapy: treatmentPlan.electro_therapy.length > 0 ? treatmentPlan.electro_therapy : null,
+                home_programme: treatmentPlan.home_programme.length > 0 ? treatmentPlan.home_programme : null,
+                orthosis: treatmentPlan.orthosis.length > 0 ? treatmentPlan.orthosis : null,
+                prosthesis: treatmentPlan.prosthesis.length > 0 ? treatmentPlan.prosthesis : null,
             };
 
             const result = isEdit
@@ -243,7 +325,7 @@ export function ClinicalAssessmentForm({ initialData, existingClinical, onSaved 
             </Card>
 
             {/* Pain */}
-            {condition === 'Pain' && (
+            {condition === 'Neuro Muscular Painful Condition' && (
                 <Card>
                     <h3 className="font-semibold text-text-main mb-4">Pain / Orthopedic Assessment</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -279,28 +361,12 @@ export function ClinicalAssessmentForm({ initialData, existingClinical, onSaved 
                                 {data.vas_pre != null ? getVASCategory(Number(data.vas_pre)) : '—'}
                             </div>
                         </div>
-                        <Input
-                            label="VAS Score (Post)"
-                            type="number"
-                            min={0}
-                            max={10}
-                            value={data.vas_post ?? ''}
-                            onChange={e => set('vas_post', parseInt(e.target.value) || 0)}
-                            error={errors.vas_post}
-                            required
-                        />
-                        <div className="flex flex-col gap-1">
-                            <label className="text-sm font-medium text-text-main">VAS Category (Post)</label>
-                            <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-text-muted">
-                                {data.vas_post != null ? getVASCategory(Number(data.vas_post)) : '—'}
-                            </div>
-                        </div>
                     </div>
                 </Card>
             )}
 
             {/* Neuro */}
-            {condition === 'Neuro' && (
+            {condition === 'Neurological Condition' && (
                 <Card>
                     <h3 className="font-semibold text-text-main mb-4">Neuro Assessment</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -341,7 +407,7 @@ export function ClinicalAssessmentForm({ initialData, existingClinical, onSaved 
             )}
 
             {/* Pulmonary */}
-            {condition === 'Pulmonary' && (
+            {condition === 'Pulmonary Condition' && (
                 <Card>
                     <h3 className="font-semibold text-text-main mb-4">Pulmonary Assessment</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -424,7 +490,7 @@ export function ClinicalAssessmentForm({ initialData, existingClinical, onSaved 
             )}
 
             {/* Post-Operative */}
-            {condition === 'Post-Operative' && (
+            {condition === 'Post Operative Condition' && (
                 <Card>
                     <h3 className="font-semibold text-text-main mb-4">Post-Operative Assessment</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -596,9 +662,9 @@ export function ClinicalAssessmentForm({ initialData, existingClinical, onSaved 
                         })}
                     </div>
 
-                    {/* Summary & Outcome */}
+                    {/* Summary */}
                     <div className="mt-6 pt-4 border-t border-gray-100">
-                        <h4 className="font-semibold text-text-main mb-4">Summary & Outcome</h4>
+                        <h4 className="font-semibold text-text-main mb-4">Summary</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <Select
                                 label="Service Level"
@@ -606,14 +672,6 @@ export function ClinicalAssessmentForm({ initialData, existingClinical, onSaved 
                                 onChange={e => set('ei_service_level', e.target.value)}
                                 options={toOptions(DROPDOWNS.EI_ServiceLevel)}
                                 error={errors.ei_service_level}
-                                required
-                            />
-                            <Select
-                                label="Outcome"
-                                value={data.ei_outcome || ''}
-                                onChange={e => set('ei_outcome', e.target.value)}
-                                options={toOptions(DROPDOWNS.EI_Outcome)}
-                                error={errors.ei_outcome}
                                 required
                             />
                             <Input
@@ -637,6 +695,174 @@ export function ClinicalAssessmentForm({ initialData, existingClinical, onSaved 
                     </div>
                 </Card>
             )}
+
+            {/* Treatment Plan */}
+            <Card>
+                <div className="flex items-center gap-2 mb-5 pb-3 border-b border-gray-100">
+                    <Dumbbell size={18} className="text-primary" />
+                    <h3 className="font-semibold text-text-main">Treatment Plan</h3>
+                </div>
+
+                {/* Exercise Therapy */}
+                <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                        <Dumbbell size={16} className="text-blue-600" />
+                        <h4 className="font-medium text-text-main">Exercise Therapy</h4>
+                        {treatmentPlan.exercise_therapy.length > 0 && (
+                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
+                                {treatmentPlan.exercise_therapy.length} selected
+                            </span>
+                        )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {TREATMENT_PLAN.exerciseTherapy.map(item => {
+                            const selected = treatmentPlan.exercise_therapy.includes(item);
+                            return (
+                                <button
+                                    key={item}
+                                    type="button"
+                                    onClick={() => toggleTreatment('exercise_therapy', item)}
+                                    className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                                        selected
+                                            ? 'bg-blue-600 text-white border-blue-600'
+                                            : 'bg-white text-text-main border-gray-300 hover:border-blue-400'
+                                    }`}
+                                >
+                                    {item}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Electro Therapy */}
+                <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                        <Zap size={16} className="text-amber-600" />
+                        <h4 className="font-medium text-text-main">Electro Therapy</h4>
+                        {treatmentPlan.electro_therapy.length > 0 && (
+                            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+                                {treatmentPlan.electro_therapy.length} selected
+                            </span>
+                        )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {TREATMENT_PLAN.electroTherapy.map(item => {
+                            const selected = treatmentPlan.electro_therapy.includes(item);
+                            return (
+                                <button
+                                    key={item}
+                                    type="button"
+                                    onClick={() => toggleTreatment('electro_therapy', item)}
+                                    className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                                        selected
+                                            ? 'bg-amber-600 text-white border-amber-600'
+                                            : 'bg-white text-text-main border-gray-300 hover:border-amber-400'
+                                    }`}
+                                >
+                                    {item}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Home Programme */}
+                <div>
+                    <div className="flex items-center gap-2 mb-3">
+                        <Home size={16} className="text-green-600" />
+                        <h4 className="font-medium text-text-main">Home Programme</h4>
+                        {treatmentPlan.home_programme.length > 0 && (
+                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                                {treatmentPlan.home_programme.length} selected
+                            </span>
+                        )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {TREATMENT_PLAN.homeProgramme.map(item => {
+                            const selected = treatmentPlan.home_programme.includes(item);
+                            return (
+                                <button
+                                    key={item}
+                                    type="button"
+                                    onClick={() => toggleTreatment('home_programme', item)}
+                                    className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                                        selected
+                                            ? 'bg-green-600 text-white border-green-600'
+                                            : 'bg-white text-text-main border-gray-300 hover:border-green-400'
+                                    }`}
+                                >
+                                    {item}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Orthosis */}
+                <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                        <Shield size={16} className="text-purple-600" />
+                        <h4 className="font-medium text-text-main">Orthosis</h4>
+                        {treatmentPlan.orthosis.length > 0 && (
+                            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium">
+                                {treatmentPlan.orthosis.length} selected
+                            </span>
+                        )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {TREATMENT_PLAN.orthosis.map(item => {
+                            const selected = treatmentPlan.orthosis.includes(item);
+                            return (
+                                <button
+                                    key={item}
+                                    type="button"
+                                    onClick={() => toggleTreatment('orthosis', item)}
+                                    className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                                        selected
+                                            ? 'bg-purple-600 text-white border-purple-600'
+                                            : 'bg-white text-text-main border-gray-300 hover:border-purple-400'
+                                    }`}
+                                >
+                                    {item}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Prosthesis */}
+                <div>
+                    <div className="flex items-center gap-2 mb-3">
+                        <Wrench size={16} className="text-teal-600" />
+                        <h4 className="font-medium text-text-main">Prosthesis</h4>
+                        {treatmentPlan.prosthesis.length > 0 && (
+                            <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full font-medium">
+                                {treatmentPlan.prosthesis.length} selected
+                            </span>
+                        )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {TREATMENT_PLAN.prosthesis.map(item => {
+                            const selected = treatmentPlan.prosthesis.includes(item);
+                            return (
+                                <button
+                                    key={item}
+                                    type="button"
+                                    onClick={() => toggleTreatment('prosthesis', item)}
+                                    className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                                        selected
+                                            ? 'bg-teal-600 text-white border-teal-600'
+                                            : 'bg-white text-text-main border-gray-300 hover:border-teal-400'
+                                    }`}
+                                >
+                                    {item}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            </Card>
 
             {/* Submit */}
             <div className="flex justify-end">

@@ -17,7 +17,7 @@ import {
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Link } from 'react-router-dom';
-import { fetchCalendarEvents, type CalendarEvent } from '@/services/calendarService';
+import { fetchCalendarEvents, updateScheduleStatus, type CalendarEvent } from '@/services/calendarService';
 
 // Status color config
 const STATUS_STYLES: Record<CalendarEvent['status'], { bg: string; text: string; border: string; label: string; icon: typeof CheckCircle }> = {
@@ -38,8 +38,10 @@ const EVENT_TYPE_COLORS: Record<CalendarEvent['eventType'], { bg: string; text: 
 export function CalendarPage() {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
+    const [activeFilter, setActiveFilter] = useState<'all' | 'scheduled' | 'completed' | 'missed' | null>(null);
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [loading, setLoading] = useState(true);
+    const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth(); // 0-indexed
@@ -60,6 +62,18 @@ export function CalendarPage() {
         };
         loadEvents();
     }, [year, month]);
+
+    // Handle marking a schedule as completed or missed
+    const handleMarkStatus = async (eventId: string, newStatus: 'completed' | 'missed') => {
+        setUpdatingStatus(eventId);
+        const success = await updateScheduleStatus(eventId, newStatus);
+        if (success) {
+            setEvents(prev => prev.map(e =>
+                e.id === eventId ? { ...e, status: newStatus } : e
+            ));
+        }
+        setUpdatingStatus(null);
+    };
 
     // Calendar utilities
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -100,6 +114,34 @@ export function CalendarPage() {
     const missedCount = events.filter(e => e.status === 'missed').length;
     const upcomingCount = events.filter(e => e.status === 'scheduled').length;
 
+    // Handle card click — toggle filter and show filtered events in side panel
+    const handleCardClick = (filter: 'all' | 'scheduled' | 'completed' | 'missed') => {
+        if (activeFilter === filter) {
+            setActiveFilter(null);
+            setSelectedDate(null);
+        } else {
+            setActiveFilter(filter);
+            setSelectedDate(null);
+        }
+    };
+
+    // Get events for the side panel based on active filter or selected date
+    const getFilteredPanelEvents = (): CalendarEvent[] => {
+        if (selectedDate) return events.filter(e => e.date === selectedDate);
+        if (activeFilter === 'all') return [...events].sort((a, b) => a.date.localeCompare(b.date));
+        if (activeFilter) return events.filter(e => e.status === activeFilter).sort((a, b) => a.date.localeCompare(b.date));
+        return [];
+    };
+
+    const panelEvents = getFilteredPanelEvents();
+
+    const filterLabels: Record<string, string> = {
+        all: 'All Scheduled Camps',
+        scheduled: 'Upcoming Camps',
+        completed: 'Completed Camps',
+        missed: 'Missed Camps',
+    };
+
     // Render calendar grid
     const renderCalendar = () => {
         const days = [];
@@ -113,15 +155,26 @@ export function CalendarPage() {
             const isTodayDate = isValidDay && isToday(day);
             const dateStr = isValidDay ? `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}` : '';
 
+            // Check if this day has events matching the active filter
+            const hasFilterMatch = activeFilter && hasEvents && (
+                activeFilter === 'all' || dayEvents.some(e => e.status === activeFilter)
+            );
+
             days.push(
                 <div
                     key={i}
-                    onClick={() => isValidDay && hasEvents && setSelectedDate(dateStr)}
+                    onClick={() => {
+                        if (isValidDay && hasEvents) {
+                            setSelectedDate(dateStr);
+                            setActiveFilter(null);
+                        }
+                    }}
                     className={`
                         min-h-[60px] md:min-h-[100px] p-1 md:p-2 border border-gray-100 relative
                         ${!isValidDay ? 'bg-gray-50' : hasEvents ? 'bg-white cursor-pointer hover:bg-gray-50' : 'bg-white'}
                         ${isTodayDate ? 'ring-2 ring-primary ring-inset' : ''}
                         ${selectedDate === dateStr ? 'bg-blue-50' : ''}
+                        ${hasFilterMatch ? 'ring-2 ring-inset ' + (activeFilter === 'missed' ? 'ring-red-400 bg-red-50/50' : activeFilter === 'scheduled' ? 'ring-orange-400 bg-orange-50/50' : activeFilter === 'completed' ? 'ring-green-400 bg-green-50/50' : 'ring-blue-400 bg-blue-50/50') : ''}
                         transition-colors
                     `}
                 >
@@ -167,9 +220,6 @@ export function CalendarPage() {
         return days;
     };
 
-    // Get selected date events
-    const selectedEvents = selectedDate ? events.filter(e => e.date === selectedDate) : [];
-
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -183,22 +233,34 @@ export function CalendarPage() {
                 </div>
             </div>
 
-            {/* Monthly Summary Cards */}
+            {/* Monthly Summary Cards — Clickable */}
             {!loading && events.length > 0 && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-center">
+                    <div
+                        onClick={() => handleCardClick('all')}
+                        className={`rounded-lg p-3 text-center cursor-pointer transition-all hover:shadow-md ${activeFilter === 'all' ? 'ring-2 ring-blue-500 bg-blue-100 border border-blue-300' : 'bg-blue-50 border border-blue-100'}`}
+                    >
                         <p className="text-2xl font-bold text-blue-700">{totalScheduled}</p>
                         <p className="text-xs text-blue-600 font-medium">Total Scheduled</p>
                     </div>
-                    <div className="bg-green-50 border border-green-100 rounded-lg p-3 text-center">
+                    <div
+                        onClick={() => handleCardClick('completed')}
+                        className={`rounded-lg p-3 text-center cursor-pointer transition-all hover:shadow-md ${activeFilter === 'completed' ? 'ring-2 ring-green-500 bg-green-100 border border-green-300' : 'bg-green-50 border border-green-100'}`}
+                    >
                         <p className="text-2xl font-bold text-green-700">{completedCount}</p>
                         <p className="text-xs text-green-600 font-medium">Completed</p>
                     </div>
-                    <div className="bg-orange-50 border border-orange-100 rounded-lg p-3 text-center">
+                    <div
+                        onClick={() => handleCardClick('scheduled')}
+                        className={`rounded-lg p-3 text-center cursor-pointer transition-all hover:shadow-md ${activeFilter === 'scheduled' ? 'ring-2 ring-orange-500 bg-orange-100 border border-orange-300' : 'bg-orange-50 border border-orange-100'}`}
+                    >
                         <p className="text-2xl font-bold text-orange-700">{upcomingCount}</p>
                         <p className="text-xs text-orange-600 font-medium">Upcoming</p>
                     </div>
-                    <div className="bg-red-50 border border-red-100 rounded-lg p-3 text-center">
+                    <div
+                        onClick={() => handleCardClick('missed')}
+                        className={`rounded-lg p-3 text-center cursor-pointer transition-all hover:shadow-md ${activeFilter === 'missed' ? 'ring-2 ring-red-500 bg-red-100 border border-red-300' : 'bg-red-50 border border-red-100'}`}
+                    >
                         <p className="text-2xl font-bold text-red-700">{missedCount}</p>
                         <p className="text-xs text-red-600 font-medium">Missed</p>
                     </div>
@@ -289,10 +351,12 @@ export function CalendarPage() {
                 {/* Event Details Panel */}
                 <Card className="lg:col-span-1">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-semibold text-lg text-text-main">Event Details</h3>
-                        {selectedDate && (
+                        <h3 className="font-semibold text-lg text-text-main">
+                            {activeFilter && !selectedDate ? filterLabels[activeFilter] : 'Event Details'}
+                        </h3>
+                        {(selectedDate || activeFilter) && (
                             <button
-                                onClick={() => setSelectedDate(null)}
+                                onClick={() => { setSelectedDate(null); setActiveFilter(null); }}
                                 className="text-text-muted hover:text-text-main"
                             >
                                 <X size={18} />
@@ -300,18 +364,33 @@ export function CalendarPage() {
                         )}
                     </div>
 
-                    {selectedDate ? (
-                        <div className="space-y-4">
-                            <div className="text-sm text-text-muted mb-4">
-                                {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
-                                    weekday: 'long',
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric'
-                                })}
-                            </div>
+                    {(selectedDate || activeFilter) ? (
+                        <div className="space-y-4 max-h-[600px] overflow-y-auto">
+                            {selectedDate && (
+                                <div className="text-sm text-text-muted mb-4">
+                                    {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
+                                        weekday: 'long',
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric'
+                                    })}
+                                </div>
+                            )}
 
-                            {selectedEvents.map((event, idx) => {
+                            {activeFilter && !selectedDate && (
+                                <div className="text-sm text-text-muted mb-2">
+                                    {panelEvents.length} camp{panelEvents.length !== 1 ? 's' : ''} found
+                                </div>
+                            )}
+
+                            {panelEvents.length === 0 && (
+                                <div className="text-center py-8">
+                                    <CalendarIcon size={36} className="mx-auto text-gray-300 mb-2" />
+                                    <p className="text-text-muted text-sm">No camps found for this filter</p>
+                                </div>
+                            )}
+
+                            {panelEvents.map((event, idx) => {
                                 const statusStyle = STATUS_STYLES[event.status];
                                 const typeColor = EVENT_TYPE_COLORS[event.eventType];
                                 return (
@@ -319,6 +398,17 @@ export function CalendarPage() {
                                         key={idx}
                                         className={`p-4 rounded-lg border-l-4 ${statusStyle.bg} ${statusStyle.border}`}
                                     >
+                                        {/* Show date when viewing filtered list */}
+                                        {activeFilter && !selectedDate && (
+                                            <div className="text-xs font-medium text-text-muted mb-2 flex items-center gap-1">
+                                                <CalendarIcon size={12} />
+                                                {new Date(event.date + 'T00:00:00').toLocaleDateString('en-US', {
+                                                    weekday: 'short',
+                                                    month: 'short',
+                                                    day: 'numeric'
+                                                })}
+                                            </div>
+                                        )}
                                         {/* Status & Type badges */}
                                         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                                             <span className={`text-xs font-semibold px-2 py-1 rounded ${typeColor.bg} ${typeColor.text}`}>
@@ -377,9 +467,9 @@ export function CalendarPage() {
                                                 </>
                                             )}
 
-                                            {/* Action: Log trip for scheduled/missed events */}
+                                            {/* Action buttons for scheduled/missed events */}
                                             {(event.status === 'scheduled' || event.status === 'missed') && (
-                                                <div className="mt-3 pt-3 border-t border-gray-200/50">
+                                                <div className="mt-3 pt-3 border-t border-gray-200/50 space-y-2">
                                                     <Link
                                                         to={`/tracking/add-trip?date=${event.date}&location=${encodeURIComponent(event.location)}`}
                                                     >
@@ -387,6 +477,24 @@ export function CalendarPage() {
                                                             Log Trip <ArrowRight size={14} />
                                                         </Button>
                                                     </Link>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => handleMarkStatus(event.id, 'completed')}
+                                                            disabled={updatingStatus === event.id}
+                                                            className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium rounded-lg bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors disabled:opacity-50"
+                                                        >
+                                                            <CheckCircle size={14} />
+                                                            {updatingStatus === event.id ? '...' : 'Completed'}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleMarkStatus(event.id, 'missed')}
+                                                            disabled={updatingStatus === event.id}
+                                                            className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium rounded-lg bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
+                                                        >
+                                                            <AlertTriangle size={14} />
+                                                            {updatingStatus === event.id ? '...' : 'Missed'}
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             )}
 

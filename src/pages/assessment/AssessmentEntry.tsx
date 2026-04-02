@@ -31,7 +31,7 @@ export function AssessmentEntryPage() {
         if (patientId) {
             loadExistingPatient(patientId);
         }
-    }, [patientId]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [patientId]);
 
     // Which steps are completed
     const step1Done = !!initialData;
@@ -155,6 +155,7 @@ export function AssessmentEntryPage() {
                 <FollowUpAssessmentForm
                     key={initialData ? initialData.patient_id : 'new'}
                     initialData={initialData}
+                    onEditClinical={() => setActiveStep(2)}
                 />
             )}
         </div>

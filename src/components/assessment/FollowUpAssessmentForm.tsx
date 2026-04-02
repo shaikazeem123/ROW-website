@@ -5,7 +5,8 @@ import { Select } from '@/components/common/Select';
 import { Button } from '@/components/common/Button';
 import { Loader } from '@/components/common/Loader';
 import { DROPDOWNS, toOptions } from '@/constants/assessmentDropdowns';
-import type { InitialAssessment, FollowUpAssessment } from '@/types/assessment';
+import { getVASCategory } from '@/utils/assessmentLogic';
+import type { InitialAssessment, ClinicalAssessment, FollowUpAssessment } from '@/types/assessment';
 import { assessmentService } from '@/services/assessmentService';
 import { Calendar, ClipboardList, Plus, Save, Loader2, Edit, X, Baby } from 'lucide-react';
 
@@ -27,13 +28,15 @@ const EI_DOMAINS = [
 
 interface Props {
     initialData: InitialAssessment | null;
+    onEditClinical?: () => void;
 }
 
-export function FollowUpAssessmentForm({ initialData }: Props) {
+export function FollowUpAssessmentForm({ initialData, onEditClinical }: Props) {
     const condition = initialData?.primary_condition ?? '';
     const isEI = condition === 'Early Intervention Assessment';
     const patientId = initialData?.patient_id ?? '';
 
+    const [clinicalData, setClinicalData] = useState<ClinicalAssessment | null>(null);
     const [history, setHistory] = useState<FollowUpAssessment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -73,8 +76,12 @@ export function FollowUpAssessmentForm({ initialData }: Props) {
 
     const loadHistory = async () => {
         setIsLoading(true);
-        const records = await assessmentService.getFollowUps(patientId);
+        const [records, clinical] = await Promise.all([
+            assessmentService.getFollowUps(patientId),
+            assessmentService.getClinical(patientId),
+        ]);
         setHistory(records);
+        setClinicalData(clinical);
         setIsLoading(false);
     };
 
@@ -123,18 +130,19 @@ export function FollowUpAssessmentForm({ initialData }: Props) {
             if (!data.joint_involved) e.joint_involved = 'Joint is required';
         }
 
-        if (condition === 'Pain') {
+        if (condition === 'Neuro Muscular Painful Condition') {
             if (!data.rom) e.rom = 'ROM is required';
             if (!data.strength) e.strength = 'Strength is required';
-            if (data.vas_current == null || data.vas_current < 0 || data.vas_current > 10) e.vas_current = 'VAS must be 0–10';
+            if (data.vas_current == null || data.vas_current < 0 || data.vas_current > 10) e.vas_current = 'VAS Pre must be 0–10';
+            if (data.vas_post == null || data.vas_post < 0 || data.vas_post > 10) e.vas_post = 'VAS Post must be 0–10';
         }
-        if (condition === 'Neuro') {
+        if (condition === 'Neurological Condition') {
             if (!data.neuro_strength) e.neuro_strength = 'Strength is required';
             if (!data.balance) e.balance = 'Balance is required';
             if (!data.coordination_test) e.coordination_test = 'Coordination test is required';
             if (!data.coordination_severity) e.coordination_severity = 'Severity is required';
         }
-        if (condition === 'Pulmonary') {
+        if (condition === 'Pulmonary Condition') {
             if (!data.dyspnea_mrmc) e.dyspnea_mrmc = 'Dyspnea is required';
         }
         if (condition === 'Disability') {
@@ -165,15 +173,17 @@ export function FollowUpAssessmentForm({ initialData }: Props) {
         condition,
         side_of_limb_affected: data.side_of_limb_affected || null,
         joint_involved: data.joint_involved || null,
-        rom: condition === 'Pain' ? data.rom || null : null,
-        strength: condition === 'Pain' ? data.strength || null : null,
-        vas_previous: condition === 'Pain' ? (data.vas_previous ?? null) : null,
-        vas_current: condition === 'Pain' ? Number(data.vas_current) : null,
-        neuro_strength: condition === 'Neuro' ? data.neuro_strength || null : null,
-        balance: condition === 'Neuro' ? data.balance || null : null,
-        coordination_test: condition === 'Neuro' ? data.coordination_test || null : null,
-        coordination_severity: condition === 'Neuro' ? data.coordination_severity || null : null,
-        dyspnea_mrmc: condition === 'Pulmonary' ? data.dyspnea_mrmc || null : null,
+        rom: condition === 'Neuro Muscular Painful Condition' ? data.rom || null : null,
+        strength: condition === 'Neuro Muscular Painful Condition' ? data.strength || null : null,
+        vas_previous: condition === 'Neuro Muscular Painful Condition' ? (data.vas_previous ?? null) : null,
+        vas_current: condition === 'Neuro Muscular Painful Condition' ? Number(data.vas_current) : null,
+        vas_post: condition === 'Neuro Muscular Painful Condition' ? (data.vas_post != null ? Number(data.vas_post) : null) : null,
+        vas_category_post: condition === 'Neuro Muscular Painful Condition' && data.vas_post != null ? getVASCategory(Number(data.vas_post)) : null,
+        neuro_strength: condition === 'Neurological Condition' ? data.neuro_strength || null : null,
+        balance: condition === 'Neurological Condition' ? data.balance || null : null,
+        coordination_test: condition === 'Neurological Condition' ? data.coordination_test || null : null,
+        coordination_severity: condition === 'Neurological Condition' ? data.coordination_severity || null : null,
+        dyspnea_mrmc: condition === 'Pulmonary Condition' ? data.dyspnea_mrmc || null : null,
         fim_locomotion: condition === 'Disability' ? data.fim_locomotion || null : null,
         fim_mobility: condition === 'Disability' ? data.fim_mobility || null : null,
         amp_level: condition === 'Amputation' ? data.amp_level || null : null,
@@ -247,7 +257,7 @@ export function FollowUpAssessmentForm({ initialData }: Props) {
                         <Calendar size={18} className="text-primary" />
                         <h3 className="font-semibold text-text-main">Session History</h3>
                         <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
-                            {history.length} session{history.length !== 1 ? 's' : ''}
+                            {(clinicalData ? 1 : 0) + history.length} session{(clinicalData ? 1 : 0) + history.length !== 1 ? 's' : ''}
                         </span>
                     </div>
                     {!showForm && (
@@ -257,14 +267,15 @@ export function FollowUpAssessmentForm({ initialData }: Props) {
                     )}
                 </div>
 
-                {history.length === 0 ? (
-                    <p className="text-sm text-text-muted text-center py-6">No follow-up sessions yet</p>
+                {!clinicalData && history.length === 0 ? (
+                    <p className="text-sm text-text-muted text-center py-6">No sessions yet</p>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="border-b border-gray-100">
                                     <th className="text-left py-2 px-3 font-medium text-text-muted">#</th>
+                                    <th className="text-left py-2 px-3 font-medium text-text-muted">Type</th>
                                     <th className="text-left py-2 px-3 font-medium text-text-muted">Date</th>
                                     {!isEI && (
                                         <>
@@ -272,15 +283,16 @@ export function FollowUpAssessmentForm({ initialData }: Props) {
                                             <th className="text-left py-2 px-3 font-medium text-text-muted">Joint</th>
                                         </>
                                     )}
-                                    {condition === 'Pain' && (
+                                    {condition === 'Neuro Muscular Painful Condition' && (
                                         <>
                                             <th className="text-left py-2 px-3 font-medium text-text-muted">ROM</th>
                                             <th className="text-left py-2 px-3 font-medium text-text-muted">Strength</th>
-                                            <th className="text-left py-2 px-3 font-medium text-text-muted">VAS Prev</th>
-                                            <th className="text-left py-2 px-3 font-medium text-text-muted">VAS Curr</th>
+                                            <th className="text-left py-2 px-3 font-medium text-text-muted">VAS Pre</th>
+                                            <th className="text-left py-2 px-3 font-medium text-text-muted">VAS Post</th>
+                                            <th className="text-left py-2 px-3 font-medium text-text-muted">VAS Category</th>
                                         </>
                                     )}
-                                    {condition === 'Neuro' && (
+                                    {condition === 'Neurological Condition' && (
                                         <>
                                             <th className="text-left py-2 px-3 font-medium text-text-muted">Strength</th>
                                             <th className="text-left py-2 px-3 font-medium text-text-muted">Balance</th>
@@ -288,7 +300,7 @@ export function FollowUpAssessmentForm({ initialData }: Props) {
                                             <th className="text-left py-2 px-3 font-medium text-text-muted">Severity</th>
                                         </>
                                     )}
-                                    {condition === 'Pulmonary' && (
+                                    {condition === 'Pulmonary Condition' && (
                                         <th className="text-left py-2 px-3 font-medium text-text-muted">Dyspnea (mMRC)</th>
                                     )}
                                     {condition === 'Disability' && (
@@ -311,9 +323,80 @@ export function FollowUpAssessmentForm({ initialData }: Props) {
                                 </tr>
                             </thead>
                             <tbody>
+                                {/* Clinical Assessment as Baseline */}
+                                {clinicalData && (
+                                    <tr className="border-b border-gray-50 bg-blue-50/40">
+                                        <td className="py-2 px-3 font-medium">0</td>
+                                        <td className="py-2 px-3">
+                                            <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Baseline</span>
+                                        </td>
+                                        <td className="py-2 px-3">
+                                            {clinicalData.created_at ? new Date(clinicalData.created_at).toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                                        </td>
+                                        {!isEI && (
+                                            <>
+                                                <td className="py-2 px-3">{clinicalData.side_of_limb_affected || '—'}</td>
+                                                <td className="py-2 px-3">{clinicalData.joint_involved || '—'}</td>
+                                            </>
+                                        )}
+                                        {condition === 'Neuro Muscular Painful Condition' && (
+                                            <>
+                                                <td className="py-2 px-3">{clinicalData.rom_aaos || '—'}</td>
+                                                <td className="py-2 px-3">{clinicalData.strength_mmt || '—'}</td>
+                                                <td className="py-2 px-3">{clinicalData.vas_pre ?? '—'}</td>
+                                                <td className="py-2 px-3">—</td>
+                                                <td className="py-2 px-3">{clinicalData.vas_pre != null ? getVASCategory(clinicalData.vas_pre) : '—'}</td>
+                                            </>
+                                        )}
+                                        {condition === 'Neurological Condition' && (
+                                            <>
+                                                <td className="py-2 px-3">{clinicalData.neuro_strength || '—'}</td>
+                                                <td className="py-2 px-3">{clinicalData.neuro_balance || '—'}</td>
+                                                <td className="py-2 px-3">{clinicalData.coordination_test || '—'}</td>
+                                                <td className="py-2 px-3">{clinicalData.coordination_severity || '—'}</td>
+                                            </>
+                                        )}
+                                        {condition === 'Pulmonary Condition' && (
+                                            <td className="py-2 px-3">{clinicalData.dyspnea_mrmc || '—'}</td>
+                                        )}
+                                        {condition === 'Disability' && (
+                                            <>
+                                                <td className="py-2 px-3">{clinicalData.fim_locomotion || '—'}</td>
+                                                <td className="py-2 px-3">{clinicalData.fim_mobility || '—'}</td>
+                                            </>
+                                        )}
+                                        {condition === 'Amputation' && (
+                                            <td className="py-2 px-3">{clinicalData.amp_level || '—'}</td>
+                                        )}
+                                        {isEI && (
+                                            <>
+                                                <td className="py-2 px-3">{clinicalData.ei_service_level || '—'}</td>
+                                                <td className="py-2 px-3">—</td>
+                                                <td className="py-2 px-3">{clinicalData.ei_assessor_name || '—'}</td>
+                                            </>
+                                        )}
+                                        <td className="py-2 px-3 text-right">
+                                            {onEditClinical ? (
+                                                <button
+                                                    onClick={onEditClinical}
+                                                    className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
+                                                >
+                                                    <Edit size={12} /> Edit
+                                                </button>
+                                            ) : (
+                                                <span className="text-[10px] font-medium text-gray-400">Clinical</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                )}
+
+                                {/* Follow-Up Sessions */}
                                 {history.map(row => (
                                     <tr key={row.id} className="border-b border-gray-50 hover:bg-gray-50/50">
                                         <td className="py-2 px-3 font-medium">{row.session_number}</td>
+                                        <td className="py-2 px-3">
+                                            <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded">Follow-Up</span>
+                                        </td>
                                         <td className="py-2 px-3">{row.visit_date}</td>
                                         {!isEI && (
                                             <>
@@ -321,15 +404,16 @@ export function FollowUpAssessmentForm({ initialData }: Props) {
                                                 <td className="py-2 px-3">{row.joint_involved || '—'}</td>
                                             </>
                                         )}
-                                        {condition === 'Pain' && (
+                                        {condition === 'Neuro Muscular Painful Condition' && (
                                             <>
                                                 <td className="py-2 px-3">{row.rom || '—'}</td>
                                                 <td className="py-2 px-3">{row.strength || '—'}</td>
-                                                <td className="py-2 px-3">{row.vas_previous ?? '—'}</td>
                                                 <td className="py-2 px-3">{row.vas_current ?? '—'}</td>
+                                                <td className="py-2 px-3">{row.vas_post ?? '—'}</td>
+                                                <td className="py-2 px-3">{row.vas_post != null ? getVASCategory(row.vas_post) : '—'}</td>
                                             </>
                                         )}
-                                        {condition === 'Neuro' && (
+                                        {condition === 'Neurological Condition' && (
                                             <>
                                                 <td className="py-2 px-3">{row.neuro_strength || '—'}</td>
                                                 <td className="py-2 px-3">{row.balance || '—'}</td>
@@ -337,7 +421,7 @@ export function FollowUpAssessmentForm({ initialData }: Props) {
                                                 <td className="py-2 px-3">{row.coordination_severity || '—'}</td>
                                             </>
                                         )}
-                                        {condition === 'Pulmonary' && (
+                                        {condition === 'Pulmonary Condition' && (
                                             <td className="py-2 px-3">{row.dyspnea_mrmc || '—'}</td>
                                         )}
                                         {condition === 'Disability' && (
@@ -425,7 +509,7 @@ export function FollowUpAssessmentForm({ initialData }: Props) {
                     </Card>
 
                     {/* Condition-specific progress fields */}
-                    {condition === 'Pain' && (
+                    {condition === 'Neuro Muscular Painful Condition' && (
                         <Card>
                             <h3 className="font-semibold text-text-main mb-4">Progress — Pain</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -452,7 +536,7 @@ export function FollowUpAssessmentForm({ initialData }: Props) {
                                     </div>
                                 </div>
                                 <Input
-                                    label="VAS Current"
+                                    label="VAS Score (Pre-Treatment)"
                                     type="number"
                                     min={0}
                                     max={10}
@@ -461,11 +545,27 @@ export function FollowUpAssessmentForm({ initialData }: Props) {
                                     error={errors.vas_current}
                                     required
                                 />
+                                <Input
+                                    label="VAS Score (Post-Treatment)"
+                                    type="number"
+                                    min={0}
+                                    max={10}
+                                    value={data.vas_post ?? ''}
+                                    onChange={e => set('vas_post', parseInt(e.target.value) || 0)}
+                                    error={errors.vas_post}
+                                    required
+                                />
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-sm font-medium text-text-main">VAS Category (Post)</label>
+                                    <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-text-muted">
+                                        {data.vas_post != null ? getVASCategory(Number(data.vas_post)) : '—'}
+                                    </div>
+                                </div>
                             </div>
                         </Card>
                     )}
 
-                    {condition === 'Neuro' && (
+                    {condition === 'Neurological Condition' && (
                         <Card>
                             <h3 className="font-semibold text-text-main mb-4">Progress — Neuro</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -505,7 +605,7 @@ export function FollowUpAssessmentForm({ initialData }: Props) {
                         </Card>
                     )}
 
-                    {condition === 'Pulmonary' && (
+                    {condition === 'Pulmonary Condition' && (
                         <Card>
                             <h3 className="font-semibold text-text-main mb-4">Progress — Pulmonary</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

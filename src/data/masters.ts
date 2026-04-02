@@ -1,17 +1,16 @@
 
 export const SERVICE_MASTER = [
-    { code: 'PT', name: 'Physiotherapy' },
-    { code: 'OT', name: 'Occupational Therapy' },
-    { code: 'ST', name: 'Speech Therapy' },
-    { code: 'CONS', name: 'Consultation' },
-    { code: 'SCR', name: 'Screening' },
-    { code: 'FU', name: 'Follow-up' },
-    { code: 'MED', name: 'Medicine Distribution' },
-    { code: 'DIAG', name: 'Diagnostic Test' },
+    { code: 'GS', name: 'General Screening' },
+    { code: 'ASMT', name: 'Assessment' },
+    { code: 'PT-M', name: 'Physiotherapy (Manual)' },
+    { code: 'PT-E', name: 'Physiotherapy (Electro Therapy)' },
+    { code: 'PWC', name: 'Prescription for Wheel Chair' },
+    { code: 'PO', name: 'Prescription for Orthosis' },
+    { code: 'PP', name: 'Prescription for Prosthesis' },
 ];
 
 export const LOCATION_MASTER = [
-    { code: 'MCB', name: 'Mobile Clinic Bus' },
+    { code: 'MCB', name: 'Main Campus Branch' },
     { code: 'CP', name: 'Chanrayapatna' },
     { code: 'HG', name: 'Hesarghatta' },
     { code: 'NL', name: 'Nalur' },

@@ -44,10 +44,10 @@ export function ScheduleUpload() {
                 const reader = new FileReader();
                 reader.onload = async (e) => {
                     const binaryStr = e.target?.result;
-                    const workbook = XLSX.read(binaryStr, { type: 'binary' });
+                    const workbook = XLSX.read(binaryStr, { type: 'binary', cellDates: true });
                     const sheetName = workbook.SheetNames[0];
                     const sheet = workbook.Sheets[sheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(sheet) as Record<string, unknown>[];
+                    const jsonData = XLSX.utils.sheet_to_json(sheet, { raw: false, dateNF: 'dd-mm-yyyy' }) as Record<string, unknown>[];
                     await uploadData(jsonData);
                 };
                 reader.readAsBinaryString(file);
@@ -89,19 +89,18 @@ export function ScheduleUpload() {
             const parseDate = (dateStr: string | number | Date): Date => {
                 // Handle Excel serial numbers
                 if (typeof dateStr === 'number') {
-                    // Excel date serial number (days since 1900-01-01)
-                    const excelEpoch = new Date(1900, 0, 1);
-                    const date = new Date(excelEpoch.getTime() + (dateStr - 2) * 24 * 60 * 60 * 1000);
-                    return date;
+                    // Excel date serial number: serial 1 = Jan 1, 1900
+                    // Subtract 2 to account for Excel's 1-based index and leap year bug
+                    // Use day-based math (not milliseconds) to avoid DST issues
+                    return new Date(1900, 0, 1 + (dateStr - 2));
                 }
 
                 const str = String(dateStr).trim();
 
-                // Try DD-MM-YYYY or MM-DD-YYYY format
+                // DD-MM-YYYY format (day first, as used in Indian date format)
                 if (str.match(/^\d{2}-\d{2}-\d{4}$/)) {
-                    const [p1, p2, p3] = str.split('-').map(Number);
-                    if (p2 > 12) return new Date(p3, p2 - 1, p1); // Must be DD-MM-YYYY
-                    return new Date(p3, p1 - 1, p2); // Default to DD-MM-YYYY
+                    const [day, month, year] = str.split('-').map(Number);
+                    return new Date(year, month - 1, day);
                 }
 
                 // Try DD/MM/YYYY format
@@ -112,7 +111,8 @@ export function ScheduleUpload() {
 
                 // Try YYYY-MM-DD format (ISO)
                 if (str.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                    return new Date(str);
+                    const [year, month, day] = str.split('-').map(Number);
+                    return new Date(year, month - 1, day);
                 }
 
                 // Fallback: try native Date parser
@@ -141,18 +141,9 @@ export function ScheduleUpload() {
             const month = firstDate.getMonth() + 1; // 1-12
             const year = firstDate.getFullYear();
 
-            // 3. Validation: Unique Locations
             const uniqueLocations = new Set(normalizedData.map(row => row.location_name));
-            if (uniqueLocations.size !== 4) {
-                // We will warn but allow, or enforce strictness based on requirements.
-                // Requirement says: "Monthly Location Management... operates in only four locations per month."
-                // Let's enforce strictness for now, or at least check.
-                if (uniqueLocations.size !== 4) {
-                    throw new Error(`Schedule must contain exactly 4 unique locations. Found: ${uniqueLocations.size}`);
-                }
-            }
 
-            // 4. Transform Data for DB
+            // 3. Transform Data for DB
             const dbRows = normalizedData.map((row, index) => {
                 let parsedDate: Date;
                 try {
@@ -166,11 +157,16 @@ export function ScheduleUpload() {
                     throw new Error(`Invalid date value in row ${index + 1}: ${row.scheduled_date}`);
                 }
 
+                // Format date as YYYY-MM-DD using local time (not UTC) to avoid timezone shift
+                const yyyy = parsedDate.getFullYear();
+                const mm = String(parsedDate.getMonth() + 1).padStart(2, '0');
+                const dd = String(parsedDate.getDate()).padStart(2, '0');
+
                 return {
                     month,
                     year,
                     location_name: row.location_name,
-                    scheduled_date: parsedDate.toISOString().split('T')[0], // YYYY-MM-DD format
+                    scheduled_date: `${yyyy}-${mm}-${dd}`,
                     address: row.address || null,
                     is_active: true
                 };
@@ -270,7 +266,7 @@ export function ScheduleUpload() {
                 <ul className="list-disc list-inside text-xs text-blue-800 space-y-1">
                     <li>Upload CSV or Excel (.xlsx) file.</li>
                     <li>Required Columns: <strong>Scheduled Date, Location Name, Address</strong></li>
-                    <li>Format: Must contain exactly <strong>4 unique locations</strong> for the designated month.</li>
+                    <li>Format: Locations and dates from the Excel will reflect in the Calendar and Upcoming Camps.</li>
                     <li>System will automatically detect the Month/Year from the dates.</li>
                 </ul>
             </div>
