@@ -198,8 +198,13 @@ export function RecommendedExercises({ patientId, patientName, condition }: Prop
                 </style>
             </head>
             <body>
-                <div style="text-align: center; margin-bottom: 24px; border-bottom: 3px solid #059669; padding-bottom: 16px;">
-                    <h1 style="margin: 0; font-size: 22px; color: #059669;">Recommended Exercises</h1>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; border-bottom: 3px solid #059669; padding-bottom: 16px;">
+                    <div style="flex: 1;">
+                        <h1 style="margin: 0; font-size: 22px; color: #1a1a1a; font-weight: 800; line-height: 1.2;">The Association of People with Disability</h1>
+                        <p style="margin: 6px 0 0 0; font-size: 11px; color: #4b5563; line-height: 1.4;">6th Cross Road, Horamavu Agara Road, Off, Hutchins Rd, St Thomas Town, Lingarajapuram, Bengaluru, Karnataka 560084</p>
+                        <p style="margin: 6px 0 0 0; font-size: 14px; color: #059669; font-weight: 600;">Recommended Exercises</p>
+                    </div>
+                    <img src="${window.location.origin}/logo.jpg" alt="APD Logo" style="height: 80px; width: auto; flex-shrink: 0;" />
                 </div>
 
                 <div style="display: flex; justify-content: space-between; margin-bottom: 20px; padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
