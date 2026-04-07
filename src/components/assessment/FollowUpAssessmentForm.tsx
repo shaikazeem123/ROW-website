@@ -8,7 +8,8 @@ import { DROPDOWNS, toOptions } from '@/constants/assessmentDropdowns';
 import { getVASCategory } from '@/utils/assessmentLogic';
 import type { InitialAssessment, ClinicalAssessment, FollowUpAssessment } from '@/types/assessment';
 import { assessmentService } from '@/services/assessmentService';
-import { Calendar, ClipboardList, Plus, Save, Loader2, Edit, X, Baby } from 'lucide-react';
+import { Calendar, ClipboardList, Plus, Save, Loader2, Edit, X, Baby, Dumbbell, Zap, Home, Shield, Wrench } from 'lucide-react';
+import { RecommendedExercises } from './RecommendedExercises';
 
 const EI_DOMAINS = [
     { key: 'head_control', label: 'Head Control', statusKey: 'EI_HeadControl_Status' as keyof typeof DROPDOWNS, goalKey: 'EI_HeadControl_Goal' as keyof typeof DROPDOWNS },
@@ -25,6 +26,29 @@ const EI_DOMAINS = [
     { key: 'play', label: 'Play', statusKey: 'EI_Play_Status' as keyof typeof DROPDOWNS, goalKey: 'EI_Play_Goal' as keyof typeof DROPDOWNS },
     { key: 'intelligence', label: 'Intelligence', statusKey: 'EI_Intelligence_Status' as keyof typeof DROPDOWNS, goalKey: 'EI_Intelligence_Goal' as keyof typeof DROPDOWNS },
 ] as const;
+
+const TREATMENT_PLAN = {
+    exerciseTherapy: [
+        'Strengthening Exercises', 'Stretching Exercises', 'Range of Motion (ROM) Exercises',
+        'Balance Training', 'Coordination Exercises', 'Gait Training',
+        'Functional Training', 'Postural Correction Exercises', 'Breathing Exercises', 'Endurance Training',
+    ],
+    electroTherapy: [
+        'TENS', 'IFT', 'Ultrasound Therapy (UST)', 'LASER Therapy',
+        'NMES (Neuromuscular Electrical Stimulation)', 'FES (Functional Electrical Stimulation)',
+        'Intermittent Traction', 'Continuous Traction',
+    ],
+    homeProgramme: ['Strengthening', 'Stretching', 'ROM', 'Balance', 'Functional Activities'],
+    orthosis: [
+        'Cervical Collar', 'Shoulder Support', 'Elbow Brace', 'Wrist Splint', 'Hand Splint',
+        'Spinal Brace (LS Belt / TLSO)', 'Knee Brace', 'Ankle Foot Orthosis (AFO)',
+        'Knee Ankle Foot Orthosis (KAFO)', 'Foot Orthosis (Insoles)',
+    ],
+    prosthesis: [
+        'Upper Limb Prosthesis', 'Lower Limb Prosthesis', 'Below Elbow Prosthesis',
+        'Above Elbow Prosthesis', 'Below Knee Prosthesis', 'Above Knee Prosthesis',
+    ],
+};
 
 interface Props {
     initialData: InitialAssessment | null;
@@ -43,6 +67,19 @@ export function FollowUpAssessmentForm({ initialData, onEditClinical }: Props) {
     const [showForm, setShowForm] = useState(false);
     const [editingSession, setEditingSession] = useState<FollowUpAssessment | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [treatmentPlan, setTreatmentPlan] = useState<{
+        exercise_therapy: string[];
+        electro_therapy: string[];
+        home_programme: string[];
+        orthosis: string[];
+        prosthesis: string[];
+    }>({
+        exercise_therapy: [],
+        electro_therapy: [],
+        home_programme: [],
+        orthosis: [],
+        prosthesis: [],
+    });
 
     const nextSession = history.length + 1;
     const today = new Date().toISOString().split('T')[0];
@@ -89,6 +126,20 @@ export function FollowUpAssessmentForm({ initialData, onEditClinical }: Props) {
         if (!editingSession) setData(newForm());
     }, [history.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    // Load treatment plan from clinical data when available
+    useEffect(() => {
+        if (clinicalData) {
+            const existing = clinicalData as unknown as Record<string, unknown>;
+            setTreatmentPlan({
+                exercise_therapy: (existing?.exercise_therapy as string[]) || [],
+                electro_therapy: (existing?.electro_therapy as string[]) || [],
+                home_programme: (existing?.home_programme as string[]) || [],
+                orthosis: (existing?.orthosis as string[]) || [],
+                prosthesis: (existing?.prosthesis as string[]) || [],
+            });
+        }
+    }, [clinicalData]);
+
     if (!initialData) {
         return (
             <Card>
@@ -96,6 +147,15 @@ export function FollowUpAssessmentForm({ initialData, onEditClinical }: Props) {
             </Card>
         );
     }
+
+    const toggleTreatment = (category: 'exercise_therapy' | 'electro_therapy' | 'home_programme' | 'orthosis' | 'prosthesis', item: string) => {
+        setTreatmentPlan(prev => ({
+            ...prev,
+            [category]: prev[category].includes(item)
+                ? prev[category].filter(i => i !== item)
+                : [...prev[category], item],
+        }));
+    };
 
     const set = (field: string, value: string | number | null) => {
         setData(prev => ({ ...prev, [field]: value }));
@@ -801,6 +861,137 @@ export function FollowUpAssessmentForm({ initialData, onEditClinical }: Props) {
                             </div>
                         </Card>
                     )}
+
+                    {/* Treatment Plan */}
+                    <Card>
+                        <div className="flex items-center gap-2 mb-5 pb-3 border-b border-gray-100">
+                            <Dumbbell size={18} className="text-primary" />
+                            <h3 className="font-semibold text-text-main">Treatment Plan</h3>
+                        </div>
+
+                        {/* Exercise Therapy */}
+                        <div className="mb-6">
+                            <div className="flex items-center gap-2 mb-3">
+                                <Dumbbell size={16} className="text-blue-600" />
+                                <h4 className="font-medium text-text-main">Exercise Therapy</h4>
+                                {treatmentPlan.exercise_therapy.length > 0 && (
+                                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
+                                        {treatmentPlan.exercise_therapy.length} selected
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {TREATMENT_PLAN.exerciseTherapy.map(item => {
+                                    const selected = treatmentPlan.exercise_therapy.includes(item);
+                                    return (
+                                        <button key={item} type="button" onClick={() => toggleTreatment('exercise_therapy', item)}
+                                            className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${selected ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-text-main border-gray-300 hover:border-blue-400'}`}>
+                                            {item}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Electro Therapy */}
+                        <div className="mb-6">
+                            <div className="flex items-center gap-2 mb-3">
+                                <Zap size={16} className="text-amber-600" />
+                                <h4 className="font-medium text-text-main">Electro Therapy</h4>
+                                {treatmentPlan.electro_therapy.length > 0 && (
+                                    <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+                                        {treatmentPlan.electro_therapy.length} selected
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {TREATMENT_PLAN.electroTherapy.map(item => {
+                                    const selected = treatmentPlan.electro_therapy.includes(item);
+                                    return (
+                                        <button key={item} type="button" onClick={() => toggleTreatment('electro_therapy', item)}
+                                            className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${selected ? 'bg-amber-600 text-white border-amber-600' : 'bg-white text-text-main border-gray-300 hover:border-amber-400'}`}>
+                                            {item}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Home Programme */}
+                        <div className="mb-6">
+                            <div className="flex items-center gap-2 mb-3">
+                                <Home size={16} className="text-green-600" />
+                                <h4 className="font-medium text-text-main">Home Programme</h4>
+                                {treatmentPlan.home_programme.length > 0 && (
+                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                                        {treatmentPlan.home_programme.length} selected
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {TREATMENT_PLAN.homeProgramme.map(item => {
+                                    const selected = treatmentPlan.home_programme.includes(item);
+                                    return (
+                                        <button key={item} type="button" onClick={() => toggleTreatment('home_programme', item)}
+                                            className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${selected ? 'bg-green-600 text-white border-green-600' : 'bg-white text-text-main border-gray-300 hover:border-green-400'}`}>
+                                            {item}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Orthosis */}
+                        <div className="mb-6">
+                            <div className="flex items-center gap-2 mb-3">
+                                <Shield size={16} className="text-purple-600" />
+                                <h4 className="font-medium text-text-main">Orthosis</h4>
+                                {treatmentPlan.orthosis.length > 0 && (
+                                    <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium">
+                                        {treatmentPlan.orthosis.length} selected
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {TREATMENT_PLAN.orthosis.map(item => {
+                                    const selected = treatmentPlan.orthosis.includes(item);
+                                    return (
+                                        <button key={item} type="button" onClick={() => toggleTreatment('orthosis', item)}
+                                            className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${selected ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-text-main border-gray-300 hover:border-purple-400'}`}>
+                                            {item}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Prosthesis */}
+                        <div>
+                            <div className="flex items-center gap-2 mb-3">
+                                <Wrench size={16} className="text-teal-600" />
+                                <h4 className="font-medium text-text-main">Prosthesis</h4>
+                                {treatmentPlan.prosthesis.length > 0 && (
+                                    <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full font-medium">
+                                        {treatmentPlan.prosthesis.length} selected
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {TREATMENT_PLAN.prosthesis.map(item => {
+                                    const selected = treatmentPlan.prosthesis.includes(item);
+                                    return (
+                                        <button key={item} type="button" onClick={() => toggleTreatment('prosthesis', item)}
+                                            className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${selected ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-text-main border-gray-300 hover:border-teal-400'}`}>
+                                            {item}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </Card>
+
+                    {/* Recommended Exercises */}
+                    <RecommendedExercises patientId={patientId} patientName={initialData?.patient_name} condition={condition} />
 
                     {/* Submit / Cancel */}
                     <div className="flex flex-col sm:flex-row justify-end gap-3">

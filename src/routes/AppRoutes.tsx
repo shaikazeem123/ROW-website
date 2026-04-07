@@ -21,6 +21,7 @@ import { TokenManagementPage } from '../pages/tokens/TokenManagement';
 import { AssessmentEntryPage } from '../pages/assessment/AssessmentEntry';
 import { AssessmentHistoryPage } from '../pages/assessment/AssessmentHistory';
 import { AssessmentViewPage } from '../pages/assessment/AssessmentView';
+import { ExerciseManagementPage } from '../pages/exercises/ExerciseManagement';
 import { NotFoundPage } from '../pages/NotFound';
 import { ProtectedRoute } from './ProtectedRoute';
 import { DefaultRedirect } from './DefaultRedirect';
@@ -113,6 +114,10 @@ export const router = createBrowserRouter([
                     {
                         path: 'assessments/edit/:patientId',
                         element: <AssessmentEntryPage />,
+                    },
+                    {
+                        path: 'exercises/manage',
+                        element: <ExerciseManagementPage />,
                     },
                     {
                         path: 'reports',

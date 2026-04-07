@@ -4,8 +4,10 @@ import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Loader } from '@/components/common/Loader';
 import { assessmentService } from '@/services/assessmentService';
+import { exerciseService } from '@/services/exerciseService';
 import { getVASCategory } from '@/utils/assessmentLogic';
 import type { InitialAssessment, ClinicalAssessment, FollowUpAssessment } from '@/types/assessment';
+import type { PatientRecommendedExercise } from '@/types/exercise';
 import {
     ClipboardList,
     User,
@@ -19,6 +21,12 @@ import {
     TrendingUp,
     TrendingDown,
     Minus,
+    Dumbbell,
+    Zap,
+    Home,
+    Shield,
+    Wrench,
+    ImageIcon,
 } from 'lucide-react';
 
 function Field({ label, value }: { label: string; value: string | number | null | undefined }) {
@@ -47,20 +55,23 @@ export function AssessmentViewPage() {
     const [initial, setInitial] = useState<InitialAssessment | null>(null);
     const [clinical, setClinical] = useState<ClinicalAssessment | null>(null);
     const [followUps, setFollowUps] = useState<FollowUpAssessment[]>([]);
+    const [recommendedExercises, setRecommendedExercises] = useState<PatientRecommendedExercise[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         if (!patientId) return;
         const load = async () => {
             setIsLoading(true);
-            const [init, clin, fups] = await Promise.all([
+            const [init, clin, fups, exs] = await Promise.all([
                 assessmentService.getInitial(patientId),
                 assessmentService.getClinical(patientId),
                 assessmentService.getFollowUps(patientId),
+                exerciseService.getPatientExercises(patientId),
             ]);
             setInitial(init);
             setClinical(clin);
             setFollowUps(fups);
+            setRecommendedExercises(exs);
             setIsLoading(false);
         };
         load();
@@ -458,6 +469,107 @@ export function AssessmentViewPage() {
                     </Card>
                 );
             })()}
+
+            {/* ── Recommended Treatment Plan ── */}
+            {clinical && (
+                (clinical.exercise_therapy?.length ||
+                    clinical.electro_therapy?.length ||
+                    clinical.home_programme?.length ||
+                    clinical.orthosis?.length ||
+                    clinical.prosthesis?.length) ? (
+                    <Card>
+                        <div className="flex items-center gap-2 mb-5 pb-3 border-b border-gray-100">
+                            <ClipboardList size={18} className="text-primary" />
+                            <h3 className="font-semibold text-text-main">Recommended Treatment Plan</h3>
+                            <CheckCircle2 size={16} className="text-green-500 ml-auto" />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {[
+                                { label: 'Exercise Therapy', items: clinical.exercise_therapy, icon: Dumbbell, iconCls: 'text-emerald-600', tagCls: 'bg-emerald-100 text-emerald-700' },
+                                { label: 'Electro Therapy', items: clinical.electro_therapy, icon: Zap, iconCls: 'text-amber-600', tagCls: 'bg-amber-100 text-amber-700' },
+                                { label: 'Home Programme', items: clinical.home_programme, icon: Home, iconCls: 'text-blue-600', tagCls: 'bg-blue-100 text-blue-700' },
+                                { label: 'Orthosis', items: clinical.orthosis, icon: Shield, iconCls: 'text-purple-600', tagCls: 'bg-purple-100 text-purple-700' },
+                                { label: 'Prosthesis', items: clinical.prosthesis, icon: Wrench, iconCls: 'text-rose-600', tagCls: 'bg-rose-100 text-rose-700' },
+                            ].filter(g => g.items && g.items.length > 0).map(group => {
+                                const Icon = group.icon;
+                                return (
+                                    <div key={group.label} className="p-4 rounded-lg border border-gray-100 bg-gray-50/40">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Icon size={14} className={group.iconCls} />
+                                            <p className="text-xs font-bold text-text-main uppercase tracking-wide">{group.label}</p>
+                                        </div>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {group.items!.map((item, i) => (
+                                                <span key={i} className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${group.tagCls}`}>
+                                                    {item}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </Card>
+                ) : null
+            )}
+
+            {/* ── Recommended Exercises ── */}
+            {recommendedExercises.length > 0 && (
+                <Card>
+                    <div className="flex items-center gap-2 mb-5 pb-3 border-b border-gray-100">
+                        <Dumbbell size={18} className="text-emerald-600" />
+                        <h3 className="font-semibold text-text-main">Recommended Exercises</h3>
+                        <span className="ml-auto text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                            {recommendedExercises.length} exercise{recommendedExercises.length !== 1 ? 's' : ''}
+                        </span>
+                    </div>
+                    <div className="space-y-3">
+                        {recommendedExercises.map(rec => (
+                            <div key={rec.id} className="rounded-xl border-2 border-emerald-200 bg-emerald-50/20 overflow-hidden">
+                                <div className="flex gap-4 p-4">
+                                    <div className="shrink-0 w-28 h-24 md:w-36 md:h-28 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+                                        {rec.exercise?.thumbnail_url ? (
+                                            <img src={rec.exercise.thumbnail_url} alt={rec.exercise.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <ImageIcon size={28} className="text-gray-300" />
+                                        )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="font-semibold text-text-main text-sm md:text-base">
+                                            {rec.exercise?.name || 'Unknown Exercise'}
+                                        </h4>
+                                        {rec.exercise?.heading && (
+                                            <p className="text-xs text-emerald-600 font-medium">{rec.exercise.heading}</p>
+                                        )}
+                                        {rec.exercise?.description && (
+                                            <p className="text-xs md:text-sm text-text-muted mt-1.5 leading-relaxed line-clamp-2">
+                                                {rec.exercise.description}
+                                            </p>
+                                        )}
+                                        <div className="flex flex-wrap gap-3 mt-3">
+                                            <div className="px-3 py-1 bg-white rounded-lg border border-emerald-200">
+                                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Repetition: </span>
+                                                <span className="text-xs font-semibold text-text-main">{rec.repetitions || '—'}</span>
+                                            </div>
+                                            <div className="px-3 py-1 bg-white rounded-lg border border-emerald-200">
+                                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Set: </span>
+                                                <span className="text-xs font-semibold text-text-main">{rec.sets || '—'}</span>
+                                            </div>
+                                            <div className="px-3 py-1 bg-white rounded-lg border border-emerald-200">
+                                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Hold: </span>
+                                                <span className="text-xs font-semibold text-text-main">{rec.hold || '—'}</span>
+                                            </div>
+                                        </div>
+                                        {rec.notes && (
+                                            <p className="text-xs text-text-muted mt-2 italic">Note: {rec.notes}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </Card>
+            )}
 
             {/* Edit Button at Bottom */}
             <div className="flex items-center justify-between bg-surface p-5 rounded-xl border border-gray-100 shadow-sm">

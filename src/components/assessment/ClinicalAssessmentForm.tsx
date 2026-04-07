@@ -8,6 +8,7 @@ import { getVASCategory } from '@/utils/assessmentLogic';
 import type { ClinicalAssessment, InitialAssessment } from '@/types/assessment';
 import { assessmentService } from '@/services/assessmentService';
 import { Activity, Save, Loader2, Baby, Dumbbell, Zap, Home, Shield, Wrench } from 'lucide-react';
+import { RecommendedExercises } from './RecommendedExercises';
 
 const EI_DOMAINS = [
     { key: 'head_control', label: 'Head Control', statusKey: 'EI_HeadControl_Status' as keyof typeof DROPDOWNS, goalKey: 'EI_HeadControl_Goal' as keyof typeof DROPDOWNS },
@@ -863,6 +864,9 @@ export function ClinicalAssessmentForm({ initialData, existingClinical, onSaved 
                     </div>
                 </div>
             </Card>
+
+            {/* Recommended Exercises */}
+            <RecommendedExercises patientId={initialData.patient_id} patientName={initialData.patient_name} condition={condition} />
 
             {/* Submit */}
             <div className="flex justify-end">

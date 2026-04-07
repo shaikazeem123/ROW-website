@@ -12,6 +12,7 @@ import {
     Shield,
     ClipboardList,
     Bus,
+    Dumbbell,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { NavItem } from './NavItem';
@@ -40,6 +41,7 @@ const navEntries: NavEntry[] = [
     { type: 'item', path: '/services/new', label: 'Service Entry', icon: Stethoscope },
     { type: 'item', path: '/assessments/history', label: 'Assessment History', icon: History },
     { type: 'item', path: '/services/history', label: 'Service History', icon: History },
+    { type: 'item', path: '/exercises/manage', label: 'Exercise Library', icon: Dumbbell },
 
     { type: 'section', label: 'MANAGEMENT' },
     { type: 'item', path: '/reports', label: 'Reports & Analytics', icon: BarChart3 },
@@ -63,6 +65,7 @@ export function SidebarMenu({ collapsed, mobileOpen, onMobileClose }: SidebarMen
         if (path.startsWith('/beneficiary')) return hasPageAccess('beneficiary');
         if (path.startsWith('/services')) return hasPageAccess('services');
         if (path.startsWith('/assessments')) return hasPageAccess('assessments');
+        if (path.startsWith('/exercises')) return hasPageAccess('assessments');
         if (path === '/reports') return hasPageAccess('reports');
         if (path === '/token-management') return hasPageAccess('token-management');
         if (path === '/sync' || path === '/admin/control') return hasPageAccess('admin');
