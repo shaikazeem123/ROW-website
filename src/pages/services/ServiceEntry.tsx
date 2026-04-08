@@ -189,10 +189,10 @@ export function ServiceEntryPage() {
     }
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6 pb-20">
+        <div className="max-w-5xl mx-auto space-y-6 pb-20 min-w-0 w-full">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-4 min-w-0">
                     <button
                         onClick={() => navigate(-1)}
                         className="p-2 hover:bg-gray-100 rounded-full transition-colors text-text-muted"
@@ -231,7 +231,7 @@ export function ServiceEntryPage() {
                                 <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider">Core Service Details</h3>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                                 <Select
                                     label="Status"
                                     name="status"
@@ -266,7 +266,7 @@ export function ServiceEntryPage() {
                                 />
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                                 <Input
                                     label="Start Date"
                                     name="start_date"
@@ -296,7 +296,7 @@ export function ServiceEntryPage() {
                                 />
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                                 <Select
                                     label="Follow-up Number"
                                     name="custom_field2"
@@ -311,7 +311,7 @@ export function ServiceEntryPage() {
                                 />
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                                 <Select
                                     label="Service Code"
                                     name="service_code"
@@ -385,7 +385,7 @@ export function ServiceEntryPage() {
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                                     <div className="space-y-1.5">
                                         <label className="text-sm font-medium text-text-main flex items-center gap-1">
                                             <DollarSign size={14} className="text-green-600" /> Total Fee
@@ -427,7 +427,7 @@ export function ServiceEntryPage() {
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
 
                                     <Input
                                         label="Custom Field 4"

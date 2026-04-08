@@ -217,7 +217,7 @@ export function AssessmentHistoryPage() {
                 </div>
             </div>
 
-            <Card className="p-6">
+            <Card className="p-4 md:p-6 min-w-0">
                 {/* Filters */}
                 <div className="flex flex-col md:flex-row gap-4 mb-8">
                     <div className="flex-1 relative">
@@ -236,14 +236,14 @@ export function AssessmentHistoryPage() {
                         </div>
                         <Input
                             type="date"
-                            className="w-40"
+                            className="w-36 sm:w-40"
                             value={fromDate}
                             onChange={(e) => setFromDate(e.target.value)}
                         />
                         <span className="text-gray-400">to</span>
                         <Input
                             type="date"
-                            className="w-40"
+                            className="w-36 sm:w-40"
                             value={toDate}
                             onChange={(e) => setToDate(e.target.value)}
                         />
@@ -261,44 +261,44 @@ export function AssessmentHistoryPage() {
                 {/* Stats Cards */}
                 {!isLoading && (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                        <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-                            <div className="p-3 bg-primary/10 rounded-xl">
-                                <Users size={24} className="text-primary" />
+                        <div className="p-4 sm:p-5 bg-white rounded-2xl border border-gray-100 shadow-sm min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="p-2 bg-primary/10 rounded-xl shrink-0">
+                                    <Users size={18} className="text-primary" />
+                                </div>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-tight min-w-0 break-words">Total Patients</p>
                             </div>
-                            <div>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Total Patients</p>
-                                <h3 className="text-2xl font-black text-primary">{totalPatients}</h3>
-                            </div>
+                            <h3 className="text-2xl font-black text-primary">{totalPatients}</h3>
                         </div>
 
-                        <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-                            <div className="p-3 bg-green-100 rounded-xl">
-                                <Calendar size={24} className="text-green-600" />
+                        <div className="p-4 sm:p-5 bg-white rounded-2xl border border-gray-100 shadow-sm min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="p-2 bg-green-100 rounded-xl shrink-0">
+                                    <Calendar size={18} className="text-green-600" />
+                                </div>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-tight min-w-0 break-words">Follow-Up Sessions</p>
                             </div>
-                            <div>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Follow-Up Sessions</p>
-                                <h3 className="text-2xl font-black text-green-700">{totalFollowUps}</h3>
-                            </div>
+                            <h3 className="text-2xl font-black text-green-700">{totalFollowUps}</h3>
                         </div>
 
-                        <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-                            <div className="p-3 bg-blue-100 rounded-xl">
-                                <ClipboardList size={24} className="text-blue-600" />
+                        <div className="p-4 sm:p-5 bg-white rounded-2xl border border-gray-100 shadow-sm min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="p-2 bg-blue-100 rounded-xl shrink-0">
+                                    <ClipboardList size={18} className="text-blue-600" />
+                                </div>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-tight min-w-0 break-words">Conditions</p>
                             </div>
-                            <div>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Conditions</p>
-                                <h3 className="text-2xl font-black text-blue-700">{Object.keys(conditionBreakdown).length}</h3>
-                            </div>
+                            <h3 className="text-2xl font-black text-blue-700">{Object.keys(conditionBreakdown).length}</h3>
                         </div>
 
-                        <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-                            <div className="p-3 bg-purple-100 rounded-xl">
-                                <Activity size={24} className="text-purple-600" />
+                        <div className="p-4 sm:p-5 bg-white rounded-2xl border border-gray-100 shadow-sm min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="p-2 bg-purple-100 rounded-xl shrink-0">
+                                    <Activity size={18} className="text-purple-600" />
+                                </div>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-tight min-w-0 break-words">Top Condition</p>
                             </div>
-                            <div>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Top Condition</p>
-                                <h3 className="text-lg font-black text-purple-700">{topCondition ? topCondition[0] : '—'}</h3>
-                            </div>
+                            <h3 className="text-base font-black text-purple-700 break-words leading-tight">{topCondition ? topCondition[0] : '—'}</h3>
                         </div>
                     </div>
                 )}
@@ -317,8 +317,8 @@ export function AssessmentHistoryPage() {
                         <p className="text-gray-400 font-medium">No assessment records found for the selected criteria.</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto -mx-6 px-6">
-                        <table className="w-full text-left border-collapse">
+                    <div className="overflow-x-auto min-w-0 w-full">
+                        <table className="w-full text-left border-collapse min-w-[900px]">
                             <thead>
                                 <tr className="border-b border-gray-100">
                                     <th className="py-4 font-bold text-[10px] uppercase text-gray-400 tracking-wider pl-4">Date</th>
@@ -332,7 +332,7 @@ export function AssessmentHistoryPage() {
                             </thead>
                             <tbody className="divide-y divide-gray-50">
                                 {filtered.map((r) => (
-                                    <tr key={r.patient_id} className="hover:bg-gray-50/50 transition-colors group">
+                                    <tr key={r.patient_id} className="hover:bg-gray-50/50 transition-colors group align-top">
                                         <td className="py-5 pl-4">
                                             <div className="text-sm font-bold text-gray-900 leading-tight">
                                                 {new Date(r.assessment_date).toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -348,8 +348,8 @@ export function AssessmentHistoryPage() {
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="py-5">
-                                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider ${conditionColors[r.primary_condition] || 'bg-gray-100 text-gray-700'}`}>
+                                        <td className="py-5 pr-3 align-top">
+                                            <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider whitespace-nowrap ${conditionColors[r.primary_condition] || 'bg-gray-100 text-gray-700'}`}>
                                                 {r.primary_condition}
                                             </span>
                                             <div className="text-[10px] text-gray-400 mt-1 truncate max-w-[140px]">

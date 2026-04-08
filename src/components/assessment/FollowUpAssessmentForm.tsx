@@ -330,8 +330,8 @@ export function FollowUpAssessmentForm({ initialData, onEditClinical }: Props) {
                 {!clinicalData && history.length === 0 ? (
                     <p className="text-sm text-text-muted text-center py-6">No sessions yet</p>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
+                    <div className="overflow-x-auto min-w-0 w-full">
+                        <table className="w-full text-sm min-w-[640px]">
                             <thead>
                                 <tr className="border-b border-gray-100">
                                     <th className="text-left py-2 px-3 font-medium text-text-muted">#</th>
@@ -730,7 +730,7 @@ export function FollowUpAssessmentForm({ initialData, onEditClinical }: Props) {
                             </div>
 
                             {/* Desktop: Table */}
-                            <div className="hidden md:block overflow-x-auto">
+                            <div className="hidden lg:block overflow-x-auto min-w-0">
                                 <table className="w-full text-sm">
                                     <thead>
                                         <tr className="bg-gray-50 border-b border-gray-200">
@@ -779,7 +779,7 @@ export function FollowUpAssessmentForm({ initialData, onEditClinical }: Props) {
                             </div>
 
                             {/* Mobile: Card layout */}
-                            <div className="md:hidden space-y-4">
+                            <div className="lg:hidden space-y-4">
                                 {EI_DOMAINS.map(domain => {
                                     const statusField = `ei_${domain.key}_status`;
                                     const goalField = `ei_${domain.key}_goal`;

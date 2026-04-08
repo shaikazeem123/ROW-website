@@ -356,9 +356,9 @@ Area: ${token.area || '-'}
                 <p className="text-gray-500">Manage daily tokens and queue</p>
             </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-w-0">
                 {/* 1. Generation Form */}
-                <div className="lg:col-span-1 space-y-6">
+                <div className="lg:col-span-1 space-y-6 min-w-0">
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                         <h2 className="text-xl font-semibold mb-4 text-primary flex items-center gap-2">
                             <RefreshCw size={20} /> Generate Token
@@ -514,8 +514,8 @@ Area: ${token.area || '-'}
                 </div>
 
                 {/* 2. Live Queue List */}
-                <div className="lg:col-span-2">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">
+                <div className="lg:col-span-2 min-w-0">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col h-full min-w-0">
                         <div className="p-4 border-b border-gray-100 flex flex-wrap gap-4 justify-between items-center bg-gray-50/50">
                             <div className="flex flex-wrap items-center gap-4">
                                 <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -582,8 +582,8 @@ Area: ${token.area || '-'}
                             </div>
                         </div>
 
-                        <div className="overflow-x-auto flex-1 p-0">
-                            <table className="w-full text-left text-sm min-w-[500px]">
+                        <div className="overflow-x-auto flex-1 p-0 min-w-0">
+                            <table className="w-full text-left text-sm min-w-[420px]">
                                 <thead className="bg-gray-50 text-gray-500 font-medium">
                                     <tr>
                                         <th className="p-3">Token</th>

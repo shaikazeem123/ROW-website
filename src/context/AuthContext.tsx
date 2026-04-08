@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 .single();
 
             // EMERGENCY BYPASS: Known admin emails that should always have access
-            const adminEmails = ['birej60989@dnsclick.co', 'shaikazeem@apd-india.org'];
+            const adminEmails = ['it@apd-india.org', 'shaikazeem@apd-india.org'];
             const isEmergencyAdmin = userEmail && adminEmails.includes(userEmail.toLowerCase().trim());
 
             if (error) {

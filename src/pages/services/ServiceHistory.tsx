@@ -96,7 +96,7 @@ export function ServiceHistoryPage() {
             (s.file_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
             (s.service_code || '').toLowerCase().includes(searchTerm.toLowerCase());
 
-        const serviceDate = s.schedule_date;
+        const serviceDate = (s.schedule_date || '').slice(0, 10);
         const matchesFrom = !fromDate || serviceDate >= fromDate;
         const matchesTo = !toDate || serviceDate <= toDate;
 
@@ -145,7 +145,10 @@ export function ServiceHistoryPage() {
         const url = window.URL.createObjectURL(blob);
         const anchor = document.createElement('a');
         anchor.href = url;
-        anchor.download = `Service_History_Audit_${new Date().toISOString().split('T')[0]}.xlsx`;
+        const rangeLabel = fromDate || toDate
+            ? `_${fromDate || 'start'}_to_${toDate || 'end'}`
+            : '';
+        anchor.download = `Service_History_Audit${rangeLabel}_${new Date().toISOString().split('T')[0]}.xlsx`;
         anchor.click();
         window.URL.revokeObjectURL(url);
     };
@@ -233,48 +236,48 @@ export function ServiceHistoryPage() {
 
                 {!isLoading && (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                        <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-                            <div className="p-3 bg-primary/10 rounded-xl">
-                                <Stethoscope size={24} className="text-primary" />
+                        <div className="p-4 sm:p-5 bg-white rounded-2xl border border-gray-100 shadow-sm min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="p-2 bg-primary/10 rounded-xl shrink-0">
+                                    <Stethoscope size={18} className="text-primary" />
+                                </div>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-tight min-w-0 break-words">Total Services</p>
                             </div>
-                            <div>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Total Services</p>
-                                <h3 className="text-2xl font-black text-primary">{filteredServices.length}</h3>
-                            </div>
+                            <h3 className="text-2xl font-black text-primary">{filteredServices.length}</h3>
                         </div>
 
-                        <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-                            <div className="p-3 bg-blue-100 rounded-xl">
-                                <Users size={24} className="text-blue-600" />
+                        <div className="p-4 sm:p-5 bg-white rounded-2xl border border-gray-100 shadow-sm min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="p-2 bg-blue-100 rounded-xl shrink-0">
+                                    <Users size={18} className="text-blue-600" />
+                                </div>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-tight min-w-0 break-words">Beneficiaries</p>
                             </div>
-                            <div>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Beneficiaries</p>
-                                <h3 className="text-2xl font-black text-blue-700">{uniqueBeneficiaryCount}</h3>
-                            </div>
+                            <h3 className="text-2xl font-black text-blue-700">{uniqueBeneficiaryCount}</h3>
                         </div>
 
-                        <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-                            <div className="p-3 bg-green-100 rounded-xl">
-                                <Clock size={24} className="text-green-600" />
+                        <div className="p-4 sm:p-5 bg-white rounded-2xl border border-gray-100 shadow-sm min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="p-2 bg-green-100 rounded-xl shrink-0">
+                                    <Clock size={18} className="text-green-600" />
+                                </div>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-tight min-w-0 break-words">Total Hours</p>
                             </div>
-                            <div>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Total Hours</p>
-                                <h3 className="text-2xl font-black text-green-700">
-                                    {filteredServices.reduce((sum, s) => sum + (s.total_hours || 0), 0).toFixed(1)}
-                                </h3>
-                            </div>
+                            <h3 className="text-2xl font-black text-green-700">
+                                {filteredServices.reduce((sum, s) => sum + (s.total_hours || 0), 0).toFixed(1)}
+                            </h3>
                         </div>
 
-                        <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-                            <div className="p-3 bg-purple-100 rounded-xl">
-                                <MapPin size={24} className="text-purple-600" />
+                        <div className="p-4 sm:p-5 bg-white rounded-2xl border border-gray-100 shadow-sm min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="p-2 bg-purple-100 rounded-xl shrink-0">
+                                    <MapPin size={18} className="text-purple-600" />
+                                </div>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-tight min-w-0 break-words">Locations</p>
                             </div>
-                            <div>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Locations</p>
-                                <h3 className="text-2xl font-black text-purple-700">
-                                    {new Set(filteredServices.map(s => s.location_code)).size}
-                                </h3>
-                            </div>
+                            <h3 className="text-2xl font-black text-purple-700">
+                                {new Set(filteredServices.map(s => s.location_code)).size}
+                            </h3>
                         </div>
                     </div>
                 )}
@@ -292,8 +295,8 @@ export function ServiceHistoryPage() {
                         <p className="text-gray-400 font-medium">No service records found for the selected criteria.</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto -mx-4 px-4 md:-mx-6 md:px-6">
-                        <table className="w-full min-w-[700px] text-left border-collapse">
+                    <div className="overflow-x-auto min-w-0 w-full">
+                        <table className="w-full min-w-[860px] text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-gray-100">
                                     <th className="py-4 font-bold text-[10px] uppercase text-gray-400 tracking-wider pl-4">Schedule Date</th>
@@ -306,7 +309,7 @@ export function ServiceHistoryPage() {
                             </thead>
                             <tbody className="divide-y divide-gray-50">
                                 {filteredServices.map((service) => (
-                                    <tr key={service.id} className="hover:bg-gray-50/50 transition-colors group">
+                                    <tr key={service.id} className="hover:bg-gray-50/50 transition-colors group align-top">
                                         <td className="py-5 pl-4">
                                             <div className="text-sm font-bold text-gray-900 leading-tight">
                                                 {new Date(service.schedule_date).toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -326,7 +329,7 @@ export function ServiceHistoryPage() {
                                             </div>
                                         </td>
                                         <td className="py-5">
-                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wider ${service.status === 'AVAILED'
+                                            <span className={`inline-block whitespace-nowrap px-2 py-0.5 rounded text-[10px] font-bold tracking-wider ${service.status === 'AVAILED'
                                                 ? 'bg-green-100 text-green-700'
                                                 : 'bg-amber-100 text-amber-700'
                                                 }`}>

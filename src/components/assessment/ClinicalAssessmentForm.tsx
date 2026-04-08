@@ -573,7 +573,7 @@ export function ClinicalAssessmentForm({ initialData, existingClinical, onSaved 
                     </div>
 
                     {/* Desktop: Table layout */}
-                    <div className="hidden md:block overflow-x-auto">
+                    <div className="hidden lg:block overflow-x-auto min-w-0">
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="bg-gray-50 border-b border-gray-200">
@@ -622,7 +622,7 @@ export function ClinicalAssessmentForm({ initialData, existingClinical, onSaved 
                     </div>
 
                     {/* Mobile: Card layout */}
-                    <div className="md:hidden space-y-4">
+                    <div className="lg:hidden space-y-4">
                         {EI_DOMAINS.map(domain => {
                             const statusField = `ei_${domain.key}_status` as keyof ClinicalAssessment;
                             const goalField = `ei_${domain.key}_goal` as keyof ClinicalAssessment;

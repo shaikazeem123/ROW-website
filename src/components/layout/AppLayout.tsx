@@ -25,8 +25,8 @@ export function AppLayout() {
             <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
                 <Header onMenuClick={() => setMobileMenuOpen(true)} />
 
-                <main className="flex-1 overflow-auto p-4 md:p-8">
-                    <div className="max-w-7xl mx-auto">
+                <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8">
+                    <div className="max-w-7xl mx-auto w-full min-w-0">
                         <Outlet />
                     </div>
                 </main>

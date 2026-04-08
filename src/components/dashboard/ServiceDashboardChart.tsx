@@ -62,55 +62,47 @@ export function ServiceDashboardChart({ timeframe, filter }: Props) {
             </div>
 
             {/* Summary Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-primary/5 p-4 rounded-xl border border-primary/10">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white rounded-lg shadow-sm text-primary">
-                            <Activity size={18} />
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div className="bg-primary/5 p-3 sm:p-4 rounded-xl border border-primary/10 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                        <div className="p-1.5 bg-white rounded-lg shadow-sm text-primary shrink-0">
+                            <Activity size={16} />
                         </div>
-                        <div>
-                            <p className="text-[11px] text-primary font-bold uppercase tracking-wider mb-0.5">Total Services</p>
-                            <p className="text-xl font-black text-primary">{summary.totalServices}</p>
-                        </div>
+                        <p className="text-[10px] sm:text-[11px] text-primary font-bold uppercase tracking-wider leading-tight min-w-0 break-words">Total Services</p>
                     </div>
+                    <p className="text-xl font-black text-primary">{summary.totalServices}</p>
                 </div>
 
-                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white rounded-lg shadow-sm text-blue-600">
-                            <Users size={18} />
+                <div className="bg-blue-50 p-3 sm:p-4 rounded-xl border border-blue-100 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                        <div className="p-1.5 bg-white rounded-lg shadow-sm text-blue-600 shrink-0">
+                            <Users size={16} />
                         </div>
-                        <div>
-                            <p className="text-[11px] text-blue-700 font-bold uppercase tracking-wider mb-0.5">Beneficiaries</p>
-                            <p className="text-xl font-black text-blue-900">{summary.totalBeneficiaries}</p>
-                        </div>
+                        <p className="text-[10px] sm:text-[11px] text-blue-700 font-bold uppercase tracking-wider leading-tight min-w-0 break-words">Beneficiaries</p>
                     </div>
+                    <p className="text-xl font-black text-blue-900">{summary.totalBeneficiaries}</p>
                 </div>
 
-                <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white rounded-lg shadow-sm text-purple-600">
-                            <TrendingUp size={18} />
+                <div className="bg-purple-50 p-3 sm:p-4 rounded-xl border border-purple-100 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                        <div className="p-1.5 bg-white rounded-lg shadow-sm text-purple-600 shrink-0">
+                            <TrendingUp size={16} />
                         </div>
-                        <div>
-                            <p className="text-[11px] text-purple-700 font-bold uppercase tracking-wider mb-0.5">Top Service</p>
-                            <p className="text-sm font-bold text-purple-900 truncate max-w-[120px]" title={summary.mostActiveService}>
-                                {summary.mostActiveService}
-                            </p>
-                        </div>
+                        <p className="text-[10px] sm:text-[11px] text-purple-700 font-bold uppercase tracking-wider leading-tight min-w-0 break-words">Top Service</p>
                     </div>
+                    <p className="text-sm font-bold text-purple-900 truncate" title={summary.mostActiveService}>
+                        {summary.mostActiveService}
+                    </p>
                 </div>
 
-                <div className="bg-orange-50 p-4 rounded-xl border border-orange-100">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white rounded-lg shadow-sm text-orange-600">
-                            <Filter size={18} />
+                <div className="bg-orange-50 p-3 sm:p-4 rounded-xl border border-orange-100 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                        <div className="p-1.5 bg-white rounded-lg shadow-sm text-orange-600 shrink-0">
+                            <Filter size={16} />
                         </div>
-                        <div>
-                            <p className="text-[11px] text-orange-700 font-bold uppercase tracking-wider mb-0.5">Avg/Day</p>
-                            <p className="text-xl font-black text-orange-900">{summary.avgServicesPerDay}</p>
-                        </div>
+                        <p className="text-[10px] sm:text-[11px] text-orange-700 font-bold uppercase tracking-wider leading-tight min-w-0 break-words">Avg/Day</p>
                     </div>
+                    <p className="text-xl font-black text-orange-900">{summary.avgServicesPerDay}</p>
                 </div>
             </div>
 
