@@ -5,7 +5,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { Card } from '@/components/common/Card';
-import { Stethoscope } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export function LoginPage() {
@@ -104,13 +103,23 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative">
+      <img
+        src="/logo.jpg"
+        alt="APD"
+        className="absolute top-4 right-4 w-20 sm:w-29 h-auto rounded-lg shadow-md"
+      />
+      <h1 className="w-full text-center text-xl sm:text-2xl md:text-3xl font-extrabold text-text-main mb-6 leading-tight whitespace-nowrap">
+        The Association of People with Disability
+      </h1>
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4 text-primary">
-            <Stethoscope size={32} />
-          </div>
-          <h1 className="text-3xl font-bold text-text-main mb-2">Rehab on Wheels</h1>
+          <img
+            src="/rehab-logo.png"
+            alt="Rehab on Wheels"
+            className="mx-auto mb-3 w-72 max-w-full h-auto rounded-xl shadow-md"
+          />
+          <p className="text-xs text-text-muted italic mb-2">A program by APD</p>
           <p className="text-text-muted">
             {isLogin ? 'Sign in to manage rehabilitation services' : 'Create an account to get started'}
           </p>
@@ -123,7 +132,7 @@ export function LoginPage() {
                 <Input
                   label="Full Name"
                   type="text"
-                  placeholder="John Doe"
+                  placeholder="please enter the name "
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   required
