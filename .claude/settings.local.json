@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"C:\\\\Users\\\\Admin\\\\Desktop\\\\ROW\" && npx tsc --noEmit 2>&1 | head -30)",
+      "Bash(cd \"C:\\\\Users\\\\Admin\\\\Desktop\\\\ROW\" && npx tsc --noEmit 2>&1 | head -40)",
+      "Bash(ls \"C:\\\\Users\\\\Admin\\\\Desktop\\\\ROW/sql/\" 2>/dev/null; ls \"C:\\\\Users\\\\Admin\\\\Desktop\\\\ROW/\"*.sql 2>/dev/null)",
+      "Bash(cd \"C:\\\\Users\\\\Admin\\\\Desktop\\\\ROW\" && npx tsc --noEmit 2>&1 | head -20)",
+      "Bash(npx tsc:*)",
+      "Bash(find:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git revert:*)",
+      "Bash(xargs grep:*)",
+      "Bash(curl -s -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhyenZlaWhsY3Fyc3Vnd3VkbmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MjQxMjUsImV4cCI6MjA4NTEwMDEyNX0.aNTmHXefYHRmeFFlQQnNTEdbRT7FKQCZKzbwRhRVDaw' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhyenZlaWhsY3Fyc3Vnd3VkbmR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MjQxMjUsImV4cCI6MjA4NTEwMDEyNX0.aNTmHXefYHRmeFFlQQnNTEdbRT7FKQCZKzbwRhRVDaw' https://hrzveihlcqrsugwudndy.supabase.co/rest/v1/)",
+      "Bash(python -m json.tool)",
+      "Bash(node -e \"let d='''''''';process.stdin.on\\(''''data'''',c=>d+=c\\);process.stdin.on\\(''''end'''',\\(\\)=>{const j=JSON.parse\\(d\\);const tables=Object.keys\\(j.paths\\).filter\\(k=>k!==''''/''''\\).map\\(k=>k.slice\\(1\\)\\).sort\\(\\);console.log\\(tables.join\\(''''\\\\n''''\\)\\)}\\)\")",
+      "Bash(grep -l \"supabase.from\\\\|\\\\.from\\(\" /c/Users/Admin/Desktop/ROW/src/pages/**/*.tsx)",
+      "Bash(ls:*)",
+      "Bash(file:*)",
+      "Bash(npm run:*)",
+      "Bash(find /c/Users/Admin/Desktop/ROW/src -type f \\\\\\(-name *.tsx -o -name *.ts -o -name *.css \\\\\\))",
+      "Bash(grep -r \"status\" /c/Users/Admin/Desktop/ROW/*.sql)",
+      "Bash(grep:*)",
+      "Bash(find C:UsersAdminDesktopROW -type f \\\\\\(-name *.sql -o -name *schema* -o -name *migration* \\\\\\))",
+      "Bash(npx vite:*)",
+      "Bash(npx eslint:*)",
+      "Bash(bash /tmp/check_imports.sh)",
+      "Bash(bash /tmp/comprehensive_check.sh)",
+      "Bash(rm:*)"
+    ]
+  }
+}
