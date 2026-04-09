@@ -195,8 +195,8 @@ export function ServiceHistoryPage() {
             </div>
 
             <Card className="p-4 md:p-6">
-                <div className="flex flex-col md:flex-row gap-4 mb-8">
-                    <div className="flex-1 relative">
+                <div className="flex flex-col md:flex-row md:items-start gap-4 mb-8">
+                    <div className="flex-1 relative w-full">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                         <Input
                             placeholder="Search by Beneficiary, File Number or Service..."
@@ -212,14 +212,14 @@ export function ServiceHistoryPage() {
                         </div>
                         <Input
                             type="date"
-                            className="w-40"
+                            className="w-36 lg:w-40"
                             value={fromDate}
                             onChange={(e) => setFromDate(e.target.value)}
                         />
                         <span className="text-gray-400">to</span>
                         <Input
                             type="date"
-                            className="w-40"
+                            className="w-36 lg:w-40"
                             value={toDate}
                             onChange={(e) => setToDate(e.target.value)}
                         />
@@ -235,7 +235,7 @@ export function ServiceHistoryPage() {
                 </div>
 
                 {!isLoading && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
                         <div className="p-4 sm:p-5 bg-white rounded-2xl border border-gray-100 shadow-sm min-w-0">
                             <div className="flex items-center gap-2 mb-2">
                                 <div className="p-2 bg-primary/10 rounded-xl shrink-0">

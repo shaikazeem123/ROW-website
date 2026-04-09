@@ -216,9 +216,9 @@ export function BeneficiaryListPage() {
             />
 
             <Card className="p-4">
-                <div className="flex flex-col md:flex-row items-end md:items-center justify-between gap-4 mb-6">
-                    <div className="flex flex-col md:flex-row flex-1 w-full gap-4">
-                        <div className="relative flex-[2]">
+                <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 mb-6">
+                    <div className="flex flex-col sm:flex-row flex-1 w-full min-w-0 gap-4">
+                        <div className="relative flex-[2] min-w-0">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={20} />
                             <input
                                 type="text"
@@ -228,8 +228,8 @@ export function BeneficiaryListPage() {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <div className="flex flex-1 gap-2 w-full md:w-auto">
-                            <div className="flex-1">
+                        <div className="flex flex-1 gap-2 w-full md:w-auto min-w-0">
+                            <div className="flex-1 min-w-0">
                                 <label className="block text-[11px] uppercase font-bold text-text-muted mb-1 ml-1">From Date</label>
                                 <input
                                     type="date"
@@ -238,7 +238,7 @@ export function BeneficiaryListPage() {
                                     onChange={(e) => setStartDate(e.target.value)}
                                 />
                             </div>
-                            <div className="flex-1">
+                            <div className="flex-1 min-w-0">
                                 <label className="block text-[11px] uppercase font-bold text-text-muted mb-1 ml-1">To Date</label>
                                 <input
                                     type="date"
@@ -326,8 +326,8 @@ export function BeneficiaryListPage() {
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="flex-1 min-w-0 pr-6">
-                                                <div className="flex items-center justify-between gap-2">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center justify-between gap-2 pr-24 mb-1">
                                                     <h3 className="font-semibold text-text-main truncate">{b.name}</h3>
                                                 </div>
                                                 <p className="text-sm text-text-muted">{b.age} years • {b.gender}</p>

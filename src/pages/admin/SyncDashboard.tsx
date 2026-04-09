@@ -54,43 +54,43 @@ export function SyncDashboardPage() {
                     <h1 className="text-2xl font-bold text-text-main">Sync Control Center</h1>
                     <p className="text-text-muted">Monitor and manage offline data synchronization.</p>
                 </div>
-                <div className={`flex items-center gap-3 px-4 py-2 rounded-xl border shadow-sm ${isOnline ? 'bg-green-50 border-green-100 text-green-700' : 'bg-red-50 border-red-100 text-red-700'}`}>
+                <div className={`flex items-center gap-3 px-4 py-2 rounded-xl border shadow-sm self-start md:self-auto whitespace-nowrap ${isOnline ? 'bg-green-50 border-green-100 text-green-700' : 'bg-red-50 border-red-100 text-red-700'}`}>
                     {isOnline ? <><Wifi size={20} /> <span className="font-bold">SYSTEM ONLINE</span></> : <><WifiOff size={20} /> <span className="font-bold">SYSTEM OFFLINE</span></>}
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="p-6 border-l-4 border-l-orange-500">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-orange-100 text-orange-600 rounded-xl">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6">
+                <Card className="p-4 lg:p-6 border-l-4 border-l-orange-500 min-w-0">
+                    <div className="flex items-center gap-3 lg:gap-4 min-w-0">
+                        <div className="p-3 bg-orange-100 text-orange-600 rounded-xl shrink-0">
                             <CloudOff size={24} />
                         </div>
-                        <div>
-                            <p className="text-sm font-medium text-text-muted">Pending Sync</p>
+                        <div className="min-w-0">
+                            <p className="text-sm font-medium text-text-muted truncate">Pending Sync</p>
                             <h3 className="text-3xl font-black text-text-main">{pendingCount}</h3>
                         </div>
                     </div>
                 </Card>
 
-                <Card className="p-6 border-l-4 border-l-green-500">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-green-100 text-green-600 rounded-xl">
+                <Card className="p-4 lg:p-6 border-l-4 border-l-green-500 min-w-0">
+                    <div className="flex items-center gap-3 lg:gap-4 min-w-0">
+                        <div className="p-3 bg-green-100 text-green-600 rounded-xl shrink-0">
                             <Cloud size={24} />
                         </div>
-                        <div>
-                            <p className="text-sm font-medium text-text-muted">Recently Synced</p>
+                        <div className="min-w-0">
+                            <p className="text-sm font-medium text-text-muted truncate">Recently Synced</p>
                             <h3 className="text-3xl font-black text-text-main">{syncedCount}</h3>
                         </div>
                     </div>
                 </Card>
 
-                <Card className="p-6 border-l-4 border-l-red-500">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-red-100 text-red-600 rounded-xl">
+                <Card className="p-4 lg:p-6 border-l-4 border-l-red-500 min-w-0">
+                    <div className="flex items-center gap-3 lg:gap-4 min-w-0">
+                        <div className="p-3 bg-red-100 text-red-600 rounded-xl shrink-0">
                             <AlertTriangle size={24} />
                         </div>
-                        <div>
-                            <p className="text-sm font-medium text-text-muted">Sync Errors</p>
+                        <div className="min-w-0">
+                            <p className="text-sm font-medium text-text-muted truncate">Sync Errors</p>
                             <h3 className="text-3xl font-black text-text-main">{failedCount}</h3>
                         </div>
                     </div>

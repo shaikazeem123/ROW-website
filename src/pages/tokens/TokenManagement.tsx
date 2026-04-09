@@ -447,21 +447,21 @@ Area: ${token.area || '-'}
                             </div>
 
                             {/* Date and Time */}
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="min-w-0">
                                     <label className="block text-sm font-medium mb-1">Date</label>
                                     <input
                                         type="date"
-                                        className="w-full p-2 border rounded-lg text-sm"
+                                        className="w-full min-w-0 p-2 border rounded-lg text-sm"
                                         value={formData.date}
                                         onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                                     />
                                 </div>
-                                <div>
+                                <div className="min-w-0">
                                     <label className="block text-sm font-medium mb-1">Time</label>
                                     <input
                                         type="time"
-                                        className="w-full p-2 border rounded-lg text-sm"
+                                        className="w-full min-w-0 p-2 border rounded-lg text-sm"
                                         value={formData.time}
                                         onChange={(e) => setFormData({ ...formData, time: e.target.value })}
                                     />
