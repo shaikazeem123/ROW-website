@@ -548,6 +548,10 @@ export function AssessmentViewPage() {
                                         )}
                                         <div className="flex flex-wrap gap-3 mt-3">
                                             <div className="px-3 py-1 bg-white rounded-lg border border-emerald-200">
+                                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Times: </span>
+                                                <span className="text-xs font-semibold text-text-main">{rec.times || '—'}</span>
+                                            </div>
+                                            <div className="px-3 py-1 bg-white rounded-lg border border-emerald-200">
                                                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Repetition: </span>
                                                 <span className="text-xs font-semibold text-text-main">{rec.repetitions || '—'}</span>
                                             </div>

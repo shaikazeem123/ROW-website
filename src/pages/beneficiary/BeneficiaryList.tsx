@@ -24,6 +24,7 @@ export function BeneficiaryListPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [registrationFilter, setRegistrationFilter] = useState<'all' | 'pending' | 'complete'>('all');
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -160,8 +161,18 @@ export function BeneficiaryListPage() {
             matchesDate = matchesDate && (b.date_of_registration <= endDate);
         }
 
-        return matchesSearch && matchesDate;
+        let matchesRegistration = true;
+        if (registrationFilter !== 'all') {
+            const status = (b.registration_status as string | undefined) || 'complete';
+            matchesRegistration = status === registrationFilter;
+        }
+
+        return matchesSearch && matchesDate && matchesRegistration;
     });
+
+    const pendingCount = beneficiaries.filter(
+        b => (b.registration_status as string | undefined) === 'pending'
+    ).length;
 
     return (
         <div className="space-y-6">
@@ -216,6 +227,26 @@ export function BeneficiaryListPage() {
             />
 
             <Card className="p-4">
+                <div className="flex flex-wrap gap-2 mb-4">
+                    <button
+                        onClick={() => setRegistrationFilter('all')}
+                        className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-colors ${registrationFilter === 'all' ? 'bg-primary text-white border-primary' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                    >
+                        All ({beneficiaries.length})
+                    </button>
+                    <button
+                        onClick={() => setRegistrationFilter('pending')}
+                        className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-colors ${registrationFilter === 'pending' ? 'bg-orange-500 text-white border-orange-500' : 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100'}`}
+                    >
+                        Pending Registration ({pendingCount})
+                    </button>
+                    <button
+                        onClick={() => setRegistrationFilter('complete')}
+                        className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-colors ${registrationFilter === 'complete' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                    >
+                        Registered
+                    </button>
+                </div>
                 <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-4 mb-6">
                     <div className="flex flex-col sm:flex-row flex-1 w-full min-w-0 gap-3">
                         <div className="relative sm:flex-[2] min-w-0">
@@ -284,7 +315,16 @@ export function BeneficiaryListPage() {
                             if (!stableId) return null;
 
                             return (
-                                <Link key={stableId} to={b.isOffline ? '#' : `/beneficiary/${b.id}`}>
+                                <Link
+                                    key={stableId}
+                                    to={
+                                        b.isOffline
+                                            ? '#'
+                                            : (b.registration_status as string | undefined) === 'pending'
+                                                ? `/beneficiary/add?completeId=${b.id}`
+                                                : `/beneficiary/${b.id}`
+                                    }
+                                >
                                     <Card className={`p-4 hover:shadow-md transition-all cursor-pointer border-l-4 relative group ${b.id && selectedIds.includes(b.id) ? 'border-l-primary bg-primary/5 ring-1 ring-primary/20' : 'border-l-gray-300'}`}>
                                         {/* Sync Status Badge */}
                                         <div className="absolute top-3 right-10 z-10">
@@ -328,7 +368,12 @@ export function BeneficiaryListPage() {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <h3 className="font-semibold text-text-main truncate pr-20 mb-1">{b.name}</h3>
-                                                <p className="text-sm text-text-muted">{b.age} years • {b.gender}</p>
+                                                <p className="text-sm text-text-muted">{b.age ? `${b.age} years` : 'Age —'} • {b.gender || '—'}</p>
+                                                {(b.registration_status as string | undefined) === 'pending' && (
+                                                    <p className="text-[11px] text-orange-600 font-bold mt-1 bg-orange-50 px-2 py-0.5 rounded border border-orange-100 inline-flex items-center gap-1">
+                                                        <AlertTriangle size={10} /> Registration Pending — complete details
+                                                    </p>
+                                                )}
 
                                                 {b.sync_status === 'failed' && (
                                                     <p className="text-[11px] text-red-500 font-bold mt-1 bg-red-50 px-2 py-0.5 rounded border border-red-100 flex items-center gap-1">

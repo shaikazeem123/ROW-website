@@ -18,6 +18,7 @@ export interface PatientRecommendedExercise {
     id?: number;
     patient_id: string;
     exercise_id: number;
+    times: string | null;
     repetitions: string | null;
     sets: string | null;
     hold: string | null;
@@ -28,6 +29,7 @@ export interface PatientRecommendedExercise {
 
 export interface SelectedExercise {
     exercise: Exercise;
+    times: string;
     repetitions: string;
     sets: string;
     hold: string;

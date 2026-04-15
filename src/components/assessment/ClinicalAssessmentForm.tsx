@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card } from '@/components/common/Card';
 import { Input } from '@/components/common/Input';
 import { Select } from '@/components/common/Select';
@@ -9,6 +9,10 @@ import type { ClinicalAssessment, InitialAssessment } from '@/types/assessment';
 import { assessmentService } from '@/services/assessmentService';
 import { Activity, Save, Loader2, Baby, Dumbbell, Zap, Home, Shield, Wrench } from 'lucide-react';
 import { RecommendedExercises } from './RecommendedExercises';
+import { CoreServiceDetails } from './CoreServiceDetails';
+import type { CoreServiceDetailsRef } from './CoreServiceDetails';
+import { ServiceEntryService } from '@/services/serviceEntryService';
+import type { ServiceEntryPayload } from '@/types/serviceEntry';
 
 const EI_DOMAINS = [
     { key: 'head_control', label: 'Head Control', statusKey: 'EI_HeadControl_Status' as keyof typeof DROPDOWNS, goalKey: 'EI_HeadControl_Goal' as keyof typeof DROPDOWNS },
@@ -120,6 +124,14 @@ export function ClinicalAssessmentForm({ initialData, existingClinical, onSaved 
 
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isSaving, setIsSaving] = useState(false);
+    const [serviceData, setServiceData] = useState<ServiceEntryPayload | null>(null);
+    const [serviceDataValid, setServiceDataValid] = useState(false);
+    const serviceRef = useRef<CoreServiceDetailsRef>(null);
+
+    const handleServiceDataChange = (data: ServiceEntryPayload | null, isValid: boolean) => {
+        setServiceData(data);
+        setServiceDataValid(isValid);
+    };
 
     if (!initialData) {
         return (
@@ -280,6 +292,21 @@ export function ClinicalAssessmentForm({ initialData, existingClinical, onSaved 
             const result = isEdit
                 ? await assessmentService.updateClinical(existingClinical!.id!, payload)
                 : await assessmentService.createClinical(payload);
+
+            // Save service entry if data is filled and valid
+            if (serviceData && serviceDataValid) {
+                try {
+                    await ServiceEntryService.createEntry({
+                        ...serviceData,
+                        remarks: 'Created via Assessment Entry',
+                    });
+                    serviceRef.current?.setSaveStatus('saved');
+                } catch (serviceErr) {
+                    console.error('Service entry creation failed:', serviceErr);
+                    serviceRef.current?.setSaveStatus('error');
+                }
+            }
+
             onSaved(result);
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message
@@ -867,6 +894,13 @@ export function ClinicalAssessmentForm({ initialData, existingClinical, onSaved 
 
             {/* Recommended Exercises */}
             <RecommendedExercises patientId={initialData.patient_id} patientName={initialData.patient_name} condition={condition} />
+
+            {/* Core Service Details — linked to Service History */}
+            <CoreServiceDetails
+                ref={serviceRef}
+                patientName={initialData.patient_name}
+                onServiceDataChange={handleServiceDataChange}
+            />
 
             {/* Submit */}
             <div className="flex justify-end">

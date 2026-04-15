@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { DailyTokenService, type DailyToken } from '@/services/dailyTokenService';
+import { findOrCreateBeneficiary, type BeneficiaryCandidate } from '@/services/beneficiaryService';
 import {
     Users,
     UserPlus,
@@ -33,6 +34,10 @@ export function TokenManagementPage() {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [generatedToken, setGeneratedToken] = useState<DailyToken | null>(null);
 
+    // Candidate confirmation modal (when name matches existing beneficiaries)
+    const [candidateMatches, setCandidateMatches] = useState<BeneficiaryCandidate[]>([]);
+    const [showCandidateModal, setShowCandidateModal] = useState(false);
+
     const getTodayStr = () => {
         const d = new Date();
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -47,8 +52,7 @@ export function TokenManagementPage() {
     const [formData, setFormData] = useState({
         beneficiaryName: '',
         phone: '',
-        area: '',
-        center: 'Bangalore Center', // Default
+        center: '',
         date: getTodayStr(),
         time: getTimeStr()
     });
@@ -69,42 +73,66 @@ export function TokenManagementPage() {
     // Determine if user can change center
     const canChangeCenter = role === 'Admin';
 
+    // Scheduled locations from monthly_schedules
+    const [scheduledLocations, setScheduledLocations] = useState<string[]>([]);
+
     const fetchCenters = useCallback(async () => {
         try {
-            // Get Month boundaries for the selected filterDate
-            // This is more robust for Postgres DATE types than string matching
             const dateObj = new Date(filterDate);
             if (isNaN(dateObj.getTime())) return;
 
             const year = dateObj.getFullYear();
-            const month = dateObj.getMonth(); // 0-indexed
+            const month = dateObj.getMonth() + 1; // 1-indexed for DB
 
-            const firstDay = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-            const lastDay = new Date(year, month + 1, 0).toISOString().split('T')[0];
+            // Fetch scheduled locations from monthly_schedules
+            const { data: schedules } = await supabase
+                .from('monthly_schedules')
+                .select('location_name')
+                .eq('month', month)
+                .eq('year', year)
+                .eq('is_active', true);
 
-            const { data } = await supabase
+            if (schedules) {
+                const uniqueMap = new Map<string, string>();
+                schedules.forEach(s => {
+                    const name = s.location_name?.trim();
+                    if (name && !uniqueMap.has(name.toLowerCase())) {
+                        uniqueMap.set(name.toLowerCase(), name);
+                    }
+                });
+                const sorted = Array.from(uniqueMap.values()).sort();
+                setScheduledLocations(sorted);
+
+                // Auto-select first scheduled location if center is empty
+                if (!formData.center && sorted.length > 0) {
+                    setFormData(prev => ({ ...prev, center: sorted[0] }));
+                }
+            }
+
+            // Also fetch centers already used in tokens this month (for filter dropdown)
+            const firstDay = `${year}-${String(month).padStart(2, '0')}-01`;
+            const lastDay = new Date(year, month, 0).toISOString().split('T')[0];
+
+            const { data: tokenCenters } = await supabase
                 .from('tokens')
                 .select('center_name')
                 .gte('date', firstDay)
                 .lte('date', lastDay);
 
-            if (data) {
-                // Deduplicate while maintaining original casing
-                const uniqueMap = new Map();
-                data.forEach(t => {
-                    const name = t.center_name.trim();
+            if (tokenCenters) {
+                const uniqueMap = new Map<string, string>();
+                tokenCenters.forEach(t => {
+                    const name = t.center_name?.trim();
                     if (name && !uniqueMap.has(name.toLowerCase())) {
                         uniqueMap.set(name.toLowerCase(), name);
                     }
                 });
-
-                const sortedCenters = Array.from(uniqueMap.values()).sort() as string[];
-                setAvailableCenters(sortedCenters);
+                setAvailableCenters(Array.from(uniqueMap.values()).sort());
             }
         } catch (err) {
-            console.error('Error fetching monthly centers:', err);
+            console.error('Error fetching centers:', err);
         }
-    }, [filterDate]);
+    }, [filterDate, formData.center]);
 
     const fetchTokens = useCallback(async () => {
         try {
@@ -186,13 +214,45 @@ export function TokenManagementPage() {
             ...prev,
             beneficiaryName: b.name,
             phone: b.mobile_no || '',
-            area: b.city || b.district || ''
         }));
         setBeneficiaries([]);
         setSearchQuery('');
     };
 
-    const handleGenerate = async () => {
+    const createTokenForBeneficiary = async (beneficiaryId: string, beneficiaryName: string, phone: string) => {
+        const newToken = await DailyTokenService.createToken({
+            center_name: formData.center,
+            beneficiary_name: beneficiaryName,
+            beneficiary_id: beneficiaryId,
+            phone_number: phone,
+            date: formData.date,
+            time: formData.time
+        });
+
+        if (newToken) {
+            if (filterDate === formData.date && filterCenter === formData.center) {
+                await fetchTokens();
+            }
+            fetchCenters();
+
+            setFormData(prev => ({
+                ...prev,
+                beneficiaryName: '',
+                phone: '',
+                time: getTimeStr()
+            }));
+            setSelectedBen(null);
+
+            setGeneratedToken(newToken);
+            setShowSuccessModal(true);
+        }
+    };
+
+    const handleGenerate = async (forceCreate = false) => {
+        if (!formData.center) {
+            alert('Please select a scheduled area (center)');
+            return;
+        }
         if (!formData.beneficiaryName) {
             alert('Please enter a beneficiary name');
             return;
@@ -200,44 +260,63 @@ export function TokenManagementPage() {
 
         setLoading(true);
         try {
-            const newToken = await DailyTokenService.createToken({
-                center_name: formData.center,
-                beneficiary_name: formData.beneficiaryName,
-                beneficiary_id: selectedBen?.id,
-                phone_number: formData.phone,
-                area: formData.area,
-                date: formData.date,
-                time: formData.time
+            // If staff already picked a beneficiary from the search dropdown,
+            // skip matching entirely and use that id.
+            if (selectedBen && !forceCreate) {
+                await createTokenForBeneficiary(selectedBen.id, selectedBen.name, formData.phone);
+                return;
+            }
+
+            const result = await findOrCreateBeneficiary({
+                name: formData.beneficiaryName,
+                phone: formData.phone,
+                city: formData.center,
+                forceCreate,
             });
 
-            if (newToken) {
-                // Refresh list if we are viewing the same date and center
-                if (filterDate === formData.date && filterCenter === formData.center) {
-                    await fetchTokens();
-                }
-
-                // Also update centers list in case it's a new one
-                fetchCenters();
-
-                // Reset form slightly (keep center, date, time current)
-                setFormData(prev => ({
-                    ...prev,
-                    beneficiaryName: '',
-                    phone: '',
-                    area: '',
-                    time: getTimeStr() // Update time for next one
-                }));
-                setSelectedBen(null);
-
-                // Open Success Modal
-                setGeneratedToken(newToken);
-                setShowSuccessModal(true);
+            if (result.matchType === 'needs_confirmation' && result.candidates) {
+                setCandidateMatches(result.candidates);
+                setShowCandidateModal(true);
+                return;
             }
-        } catch {
+
+            if (result.beneficiary) {
+                await createTokenForBeneficiary(
+                    result.beneficiary.id,
+                    result.beneficiary.name,
+                    formData.phone || result.beneficiary.mobile_no || ''
+                );
+            }
+        } catch (err) {
+            console.error(err);
             alert('Error generating token. Please try again.');
         } finally {
             setLoading(false);
         }
+    };
+
+    const confirmCandidate = async (candidate: BeneficiaryCandidate) => {
+        setShowCandidateModal(false);
+        setCandidateMatches([]);
+        setLoading(true);
+        try {
+            await createTokenForBeneficiary(
+                candidate.id,
+                candidate.name,
+                formData.phone || candidate.mobile_no || ''
+            );
+        } catch (err) {
+            console.error(err);
+            alert('Error generating token. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const createAsNewAnyway = async () => {
+        setShowCandidateModal(false);
+        setCandidateMatches([]);
+        await handleGenerate(true);
     };
 
     const printToken = (token: DailyToken) => {
@@ -298,7 +377,6 @@ export function TokenManagementPage() {
                     <div style="margin-top: 8px; border-top: 1px dashed #eee; padding-top: 8px;">
                         <div><strong>Name:</strong> ${token.beneficiary_name}</div>
                         <div><strong>Phone:</strong> ${token.phone_number || '-'}</div>
-                        <div><strong>Area:</strong> ${token.area || '-'}</div>
                     </div>
                 </div>
 
@@ -330,7 +408,6 @@ Date: ${token.date}
 Time: ${token.time}
 Name: ${token.beneficiary_name}
 Phone: ${token.phone_number || '-'}
-Area: ${token.area || '-'}
 ----------------------------
         `;
         const element = document.createElement("a");
@@ -365,31 +442,33 @@ Area: ${token.area || '-'}
                         </h2>
 
                         <div className="space-y-4">
-                            {/* Center Selection */}
+                            {/* Center Selection — from scheduled areas */}
                             <div>
-                                <label className="block text-sm font-medium mb-1">Center</label>
-                                <div className="space-y-2">
-                                    <input
-                                        type="text"
-                                        list="center-options"
-                                        className={`w-full p-2 border rounded-lg outline-none transition-all ${canChangeCenter
-                                            ? 'focus:ring-2 focus:ring-primary/20 focus:border-primary'
-                                            : 'bg-gray-100 cursor-not-allowed'
-                                            }`}
-                                        placeholder="Select or Enter Center"
-                                        value={formData.center}
-                                        onChange={(e) => setFormData({ ...formData, center: e.target.value })}
-                                        disabled={!canChangeCenter}
-                                    />
-                                    <datalist id="center-options">
-                                        {['Bangalore Center', 'Frazer town', 'Kolar Center', 'Tumkur Center', ...availableCenters].map(c => (
-                                            <option key={c} value={c} />
-                                        ))}
-                                    </datalist>
-                                    <p className="text-[10px] text-gray-400 italic">
-                                        Active this month: {availableCenters.join(', ') || 'None yet'}
+                                <label className="block text-sm font-medium mb-1">Center Name</label>
+                                <select
+                                    className={`w-full p-2 border rounded-lg outline-none transition-all ${canChangeCenter
+                                        ? 'focus:ring-2 focus:ring-primary/20 focus:border-primary'
+                                        : 'bg-gray-100 cursor-not-allowed'
+                                        }`}
+                                    value={formData.center}
+                                    onChange={(e) => setFormData({ ...formData, center: e.target.value })}
+                                    disabled={!canChangeCenter}
+                                >
+                                    <option value="" disabled>Select Scheduled Area</option>
+                                    {scheduledLocations.map(loc => (
+                                        <option key={loc} value={loc}>{loc}</option>
+                                    ))}
+                                </select>
+                                {scheduledLocations.length === 0 && (
+                                    <p className="text-[10px] text-amber-500 mt-1">
+                                        No areas scheduled this month. Upload a schedule first.
                                     </p>
-                                </div>
+                                )}
+                                {scheduledLocations.length > 0 && (
+                                    <p className="text-[10px] text-gray-400 mt-1 italic">
+                                        {scheduledLocations.length} area{scheduledLocations.length !== 1 ? 's' : ''} scheduled this month
+                                    </p>
+                                )}
                             </div>
 
                             {/* Beneficiary Search/Select */}
@@ -435,17 +514,6 @@ Area: ${token.area || '-'}
                                 />
                             </div>
 
-                            {/* Area */}
-                            <div>
-                                <label className="block text-sm font-medium mb-1">Area</label>
-                                <input
-                                    type="text"
-                                    className="w-full p-2 border rounded-lg"
-                                    value={formData.area}
-                                    onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                                />
-                            </div>
-
                             {/* Date and Time */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="min-w-0">
@@ -469,7 +537,7 @@ Area: ${token.area || '-'}
                             </div>
 
                             <button
-                                onClick={handleGenerate}
+                                onClick={() => handleGenerate()}
                                 disabled={loading}
                                 className="w-full bg-primary text-white py-2 rounded-lg hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
                             >
@@ -672,6 +740,48 @@ Area: ${token.area || '-'}
                     </div>
                 </div>
             </div>
+
+            {/* Candidate Confirmation Modal */}
+            {showCandidateModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+                        <div className="p-6 border-b">
+                            <h2 className="text-lg font-bold text-gray-900">Possible Match Found</h2>
+                            <p className="text-sm text-gray-500 mt-1">
+                                We found existing beneficiaries with a similar name. Is this the same person?
+                            </p>
+                        </div>
+                        <div className="p-4 max-h-80 overflow-y-auto space-y-2">
+                            {candidateMatches.map(c => (
+                                <button
+                                    key={c.id}
+                                    onClick={() => confirmCandidate(c)}
+                                    className="w-full text-left p-3 border rounded-lg hover:border-primary hover:bg-primary/5 transition-colors"
+                                >
+                                    <div className="font-semibold text-gray-900">{c.name}</div>
+                                    <div className="text-xs text-gray-500 mt-0.5">
+                                        {c.mobile_no || 'No phone'} · {c.city || c.district || '—'}
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                        <div className="p-4 border-t bg-gray-50 flex gap-2">
+                            <button
+                                onClick={() => { setShowCandidateModal(false); setCandidateMatches([]); }}
+                                className="flex-1 py-2 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-white"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={createAsNewAnyway}
+                                className="flex-1 py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark"
+                            >
+                                None of these — Create New
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Success Modal */}
             {showSuccessModal && generatedToken && (

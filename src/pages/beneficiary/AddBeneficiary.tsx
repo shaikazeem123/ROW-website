@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Select } from '@/components/common/Select';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
@@ -16,6 +16,9 @@ export function AddBeneficiaryPage() {
     const navigate = useNavigate();
     const { user } = useAuth();
     const isOnline = useOnlineStatus();
+    const [searchParams] = useSearchParams();
+    const completeId = searchParams.get('completeId');
+    const isCompletingStub = !!completeId;
     const [isLoading, setIsLoading] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
 
@@ -43,14 +46,52 @@ export function AddBeneficiaryPage() {
         economicStatus: 'BPL',
     });
 
+    useEffect(() => {
+        if (!completeId) return;
+        (async () => {
+            const { data, error } = await supabase
+                .from('beneficiaries')
+                .select('*')
+                .eq('id', completeId)
+                .maybeSingle();
+
+            if (error || !data) {
+                alert('Could not load pending beneficiary.');
+                return;
+            }
+
+            setFormData(prev => ({
+                ...prev,
+                name: data.name || '',
+                age: data.age ? String(data.age) : '',
+                gender: data.gender || prev.gender,
+                dateOfRegistration: data.date_of_registration || prev.dateOfRegistration,
+                parentGuardian: data.parent_guardian || '',
+                relationship: data.relationship || prev.relationship,
+                beneficiaryType: data.beneficiary_type || prev.beneficiaryType,
+                status: data.status || prev.status,
+                address: data.address || '',
+                addressType: data.address_type || prev.addressType,
+                country: data.country || prev.country,
+                state: data.state || prev.state,
+                district: data.district || '',
+                city: data.city || '',
+                pincode: data.pincode || '',
+                mobileNo: data.mobile_no || '',
+                purposeOfVisit: data.purpose_of_visit || prev.purposeOfVisit,
+                disabilityType: data.disability_type || prev.disabilityType,
+                program: data.program || prev.program,
+                donor: data.donor || '',
+                economicStatus: data.economic_status || prev.economicStatus,
+            }));
+        })();
+    }, [completeId]);
+
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
 
-        // Generate a temporary offline reference ID based on timestamp
-        const tempToken = `OFF-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-
-        const beneficiaryData = {
+        const commonFields = {
             name: formData.name,
             age: parseInt(formData.age),
             gender: formData.gender,
@@ -72,19 +113,35 @@ export function AddBeneficiaryPage() {
             program: formData.program,
             donor: formData.donor,
             economic_status: formData.economicStatus,
-            created_by: user?.id,
-            offline_token: tempToken, // Used for sync matching only
-            created_at: new Date().toISOString(),
         };
 
         try {
+            if (isCompletingStub && completeId) {
+                const { error } = await supabase
+                    .from('beneficiaries')
+                    .update({ ...commonFields, registration_status: 'complete' })
+                    .eq('id', completeId);
+
+                if (error) throw error;
+                setShowSuccessModal(true);
+                return;
+            }
+
+            // New beneficiary path (offline-first)
+            const tempToken = `OFF-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+            const beneficiaryData = {
+                ...commonFields,
+                created_by: user?.id,
+                offline_token: tempToken,
+                created_at: new Date().toISOString(),
+            };
+
             await db.beneficiaries.add({
                 ...beneficiaryData,
                 sync_status: 'pending'
             });
 
             if (isOnline) {
-                // Try to sync with Supabase immediately if online
                 const { error } = await supabase
                     .from('beneficiaries')
                     .insert([beneficiaryData])
@@ -92,7 +149,6 @@ export function AddBeneficiaryPage() {
                     .single();
 
                 if (!error) {
-                    // Update local record if sync was successful
                     await db.beneficiaries.where('offline_token').equals(tempToken).modify({
                         sync_status: 'synced'
                     });
@@ -130,8 +186,14 @@ export function AddBeneficiaryPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-xl md:text-2xl font-bold text-text-main">Add New Beneficiary</h1>
-                    <p className="text-text-muted">Register a new patient into the system.</p>
+                    <h1 className="text-xl md:text-2xl font-bold text-text-main">
+                        {isCompletingStub ? 'Complete Registration' : 'Add New Beneficiary'}
+                    </h1>
+                    <p className="text-text-muted">
+                        {isCompletingStub
+                            ? 'Finish registering this beneficiary — details were started from the token desk.'
+                            : 'Register a new patient into the system.'}
+                    </p>
                 </div>
                 <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-sm transition-colors ${isOnline
                     ? 'bg-green-50 text-green-700 border-green-100'

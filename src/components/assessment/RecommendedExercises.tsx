@@ -64,6 +64,7 @@ export function RecommendedExercises({ patientId, patientName, condition }: Prop
                 if (rec.exercise) {
                     map.set(rec.exercise_id, {
                         exercise: rec.exercise,
+                        times: rec.times || '',
                         repetitions: rec.repetitions || '',
                         sets: rec.sets || '',
                         hold: rec.hold || '',
@@ -99,6 +100,7 @@ export function RecommendedExercises({ patientId, patientName, condition }: Prop
             } else {
                 next.set(id, {
                     exercise,
+                    times: '',
                     repetitions: '',
                     sets: '',
                     hold: '',
@@ -160,10 +162,14 @@ export function RecommendedExercises({ patientId, patientName, condition }: Prop
                     <h3 style="margin: 0 0 2px 0; font-size: 15px; font-weight: 700; color: #1a1a1a;">${sel.exercise.name}</h3>
                     <p style="margin: 0 0 8px 0; font-size: 11px; color: #059669; font-weight: 600;">${sel.exercise.heading}</p>
                     <p style="margin: 0 0 12px 0; font-size: 13px; color: #4b5563; line-height: 1.5;">${sel.exercise.description}</p>
-                    <div style="display: flex; gap: 24px;">
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                        <div>
+                            <span style="font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">Times</span>
+                            <div style="border-bottom: 2px solid #000; min-width: 70px; padding: 2px 0; font-size: 14px; font-weight: 600; margin-top: 2px;">${sel.times || '____'}</div>
+                        </div>
                         <div>
                             <span style="font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">Repetition</span>
-                            <div style="border-bottom: 2px solid #000; min-width: 80px; padding: 2px 0; font-size: 14px; font-weight: 600; margin-top: 2px;">${sel.repetitions || '____'}</div>
+                            <div style="border-bottom: 2px solid #000; min-width: 70px; padding: 2px 0; font-size: 14px; font-weight: 600; margin-top: 2px;">${sel.repetitions || '____'}</div>
                         </div>
                         <div>
                             <span style="font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">Set</span>
@@ -388,14 +394,27 @@ export function RecommendedExercises({ patientId, patientName, condition }: Prop
                                                     {isSelected && selData && (
                                                         <div className="px-4 pb-4 pt-0">
                                                             <div className="bg-white rounded-lg border border-emerald-200 p-3">
-                                                                <div className="grid grid-cols-3 gap-3">
+                                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                                    <div>
+                                                                        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
+                                                                            Times
+                                                                        </label>
+                                                                        <input
+                                                                            type="text"
+                                                                            placeholder="e.g., 10"
+                                                                            value={selData.times}
+                                                                            onClick={e => e.stopPropagation()}
+                                                                            onChange={e => updateExerciseField(exercise.id!, 'times', e.target.value)}
+                                                                            className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm font-medium text-center focus:outline-none focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400"
+                                                                        />
+                                                                    </div>
                                                                     <div>
                                                                         <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
                                                                             Repetition
                                                                         </label>
                                                                         <input
                                                                             type="text"
-                                                                            placeholder="e.g., 10"
+                                                                            placeholder="e.g., 2"
                                                                             value={selData.repetitions}
                                                                             onClick={e => e.stopPropagation()}
                                                                             onChange={e => updateExerciseField(exercise.id!, 'repetitions', e.target.value)}

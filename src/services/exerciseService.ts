@@ -132,6 +132,7 @@ export const exerciseService = {
         const records = exercises.map(ex => ({
             patient_id: patientId,
             exercise_id: ex.exercise.id!,
+            times: ex.times || null,
             repetitions: ex.repetitions || null,
             sets: ex.sets || null,
             hold: ex.hold || null,

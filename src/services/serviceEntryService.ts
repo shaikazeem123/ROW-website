@@ -7,11 +7,12 @@ export const ServiceEntryService = {
      * Creates a new service entry.
      * Hidden fields are handled internally as NULL by default as per requirement.
      */
-    async createEntry(payload: ServiceEntryPayload) {
+    async createEntry(payload: ServiceEntryPayload & { remarks?: string | null }) {
+        const { remarks, ...rest } = payload;
         const { data, error } = await supabase
             .from('service_entries')
             .insert([{
-                ...payload,
+                ...rest,
                 // These fields are hidden in UI and will be NULL by default via DB or explicit NULL
                 recommendation: null,
                 contribution: null,
@@ -22,7 +23,7 @@ export const ServiceEntryService = {
                 receipt_no: null,
                 custom_field4: null,
                 custom_field5: null,
-                remarks: null
+                remarks: remarks ?? null
             }])
             .select()
             .single();

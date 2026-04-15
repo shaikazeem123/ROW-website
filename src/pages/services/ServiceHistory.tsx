@@ -130,13 +130,15 @@ export function ServiceHistoryPage() {
             { header: 'Total Hours', key: 'total_hours', width: 12 },
             { header: 'Mode of Service', key: 'mode_of_service', width: 15 },
             { header: 'Created At', key: 'created_at', width: 20 },
-            { header: 'Remarks', key: 'remarks', width: 30 }
+            { header: 'Remarks', key: 'remarks', width: 30 },
+            { header: 'Source', key: 'source', width: 15 }
         ];
 
         filteredServices.forEach(s => {
             worksheet.addRow({
                 ...s,
-                beneficiary_name: s.beneficiary?.name || 'N/A'
+                beneficiary_name: s.beneficiary?.name || 'N/A',
+                source: s.remarks === 'Created via Assessment Entry' ? 'Assessment' : 'Service Entry'
             });
         });
 
@@ -296,7 +298,7 @@ export function ServiceHistoryPage() {
                     </div>
                 ) : (
                     <div className="overflow-x-auto min-w-0 w-full">
-                        <table className="w-full min-w-[860px] text-left border-collapse">
+                        <table className="w-full min-w-[960px] text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-gray-100">
                                     <th className="py-4 font-bold text-[10px] uppercase text-gray-400 tracking-wider pl-4">Schedule Date</th>
@@ -304,6 +306,7 @@ export function ServiceHistoryPage() {
                                     <th className="py-4 font-bold text-[10px] uppercase text-gray-400 tracking-wider">Status</th>
                                     <th className="py-4 font-bold text-[10px] uppercase text-gray-400 tracking-wider">Service & Hours</th>
                                     <th className="py-4 font-bold text-[10px] uppercase text-gray-400 tracking-wider">Location & Mode</th>
+                                    <th className="py-4 font-bold text-[10px] uppercase text-gray-400 tracking-wider">Source</th>
                                     {isAdmin && <th className="py-4 font-bold text-[10px] uppercase text-gray-400 tracking-wider pr-4 text-right">Actions</th>}
                                 </tr>
                             </thead>
@@ -355,6 +358,17 @@ export function ServiceHistoryPage() {
                                                     {service.mode_of_service}
                                                 </div>
                                             </div>
+                                        </td>
+                                        <td className="py-5">
+                                            {service.remarks === 'Created via Assessment Entry' ? (
+                                                <span className="inline-block whitespace-nowrap px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-purple-100 text-purple-700">
+                                                    Assessment
+                                                </span>
+                                            ) : (
+                                                <span className="inline-block whitespace-nowrap px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-blue-100 text-blue-700">
+                                                    Service Entry
+                                                </span>
+                                            )}
                                         </td>
                                         {isAdmin && (
                                             <td className="py-5 pr-4 text-right">
