@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Save, ArrowLeft, Stethoscope, Clock, ShieldCheck, Heart, DollarSign, FileText, ClipboardList } from 'lucide-react';
+import { Save, ArrowLeft, Stethoscope, Clock, ShieldCheck, Heart, DollarSign, FileText, ClipboardList, Plus, X } from 'lucide-react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
@@ -26,6 +26,12 @@ export function ServiceEntryPage() {
     const [error, setError] = useState<string | null>(null);
     const [followUpOptions, setFollowUpOptions] = useState<{ value: string; label: string }[]>([]);
     const [preselectedBeneficiaryId, setPreselectedBeneficiaryId] = useState<string | null>(beneficiaryIdFromUrl);
+
+    // Multi-service selection (create mode only). Each row becomes an individual service_entries record.
+    const [selectedServices, setSelectedServices] = useState<{ code: string; hours: string }[]>([
+        { code: '', hours: '' }
+    ]);
+    const isEdit = !!id;
 
     const [formData, setFormData] = useState<Partial<ServiceEntry>>({
         status: 'SCHEDULED',
@@ -132,11 +138,26 @@ export function ServiceEntryPage() {
         if (!formData.schedule_date) { setError('Schedule Date is mandatory'); return false; }
         if (!formData.start_date) { setError('Start Date is mandatory'); return false; }
         if (!formData.location_code) { setError('Location Code is mandatory'); return false; }
-        if (!formData.service_code) { setError('Service Code is mandatory'); return false; }
         if (!formData.service_provider_code) { setError('Service Provider Code is mandatory'); return false; }
-        if ((formData.total_hours || 0) <= 0) { setError('Total Hours must be greater than 0'); return false; }
         if (!formData.mode_of_service) { setError('Mode of Service is mandatory'); return false; }
         if (!formData.custom_field2) { setError('Follow-up Number is mandatory'); return false; }
+
+        if (isEdit) {
+            if (!formData.service_code) { setError('Service Code is mandatory'); return false; }
+            if ((formData.total_hours || 0) <= 0) { setError('Total Hours must be greater than 0'); return false; }
+        } else {
+            const rows = selectedServices.filter(s => s.code || s.hours);
+            if (rows.length === 0) { setError('Add at least one service'); return false; }
+            const codes = new Set<string>();
+            for (let i = 0; i < rows.length; i++) {
+                const r = rows[i];
+                if (!r.code) { setError(`Service #${i + 1}: select a service code`); return false; }
+                const h = parseFloat(r.hours);
+                if (!h || h <= 0) { setError(`Service #${i + 1}: total hours must be greater than 0`); return false; }
+                if (codes.has(r.code)) { setError(`Service "${r.code}" is selected more than once`); return false; }
+                codes.add(r.code);
+            }
+        }
 
         if (formData.status === 'AVAILED' && !formData.end_date) {
             setError('End Date is mandatory when status is AVAILED');
@@ -168,8 +189,17 @@ export function ServiceEntryPage() {
                 await ServiceEntryService.updateEntry(id, formData);
                 alert('Service entry updated successfully!');
             } else {
-                await ServiceEntryService.createEntry(formData as ServiceEntryPayload);
-                alert('Service entry saved successfully!');
+                const rows = selectedServices.filter(s => s.code);
+                await Promise.all(
+                    rows.map(r =>
+                        ServiceEntryService.createEntry({
+                            ...(formData as ServiceEntryPayload),
+                            service_code: r.code,
+                            total_hours: parseFloat(r.hours),
+                        })
+                    )
+                );
+                alert(`${rows.length} service ${rows.length === 1 ? 'entry' : 'entries'} saved successfully!`);
             }
             navigate('/services/history');
         } catch (err: unknown) {
@@ -311,18 +341,7 @@ export function ServiceEntryPage() {
                                 />
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                                <Select
-                                    label="Service Code"
-                                    name="service_code"
-                                    value={formData.service_code}
-                                    onChange={(e) => handleChange('service_code', e.target.value)}
-                                    required
-                                    options={[
-                                        { value: '', label: '-- Select Service --' },
-                                        ...SERVICE_MASTER.map(s => ({ value: s.code, label: `${s.code} - ${s.name}` }))
-                                    ]}
-                                />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                                 <Input
                                     label="Service Provider Code / Name"
                                     name="service_provider_code"
@@ -341,23 +360,108 @@ export function ServiceEntryPage() {
                                 />
                             </div>
 
-                            <div className="w-full md:w-1/3">
-                                <div className="space-y-1.5 text-sm font-medium text-text-main">
-                                    <label className="flex items-center gap-2 mb-1">
-                                        <Clock size={16} className="text-primary" /> Total Hours Spent
-                                    </label>
-                                    <Input
-                                        name="total_hours"
-                                        type="number"
-                                        step="0.1"
-                                        min="0.1"
-                                        value={formData.total_hours || ''}
-                                        onChange={(e) => handleChange('total_hours', parseFloat(e.target.value))}
+                            {isEdit ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                                    <Select
+                                        label="Service Code"
+                                        name="service_code"
+                                        value={formData.service_code}
+                                        onChange={(e) => handleChange('service_code', e.target.value)}
                                         required
-                                        placeholder="e.g. 1.5"
+                                        options={[
+                                            { value: '', label: '-- Select Service --' },
+                                            ...SERVICE_MASTER.map(s => ({ value: s.code, label: `${s.code} - ${s.name}` }))
+                                        ]}
                                     />
+                                    <div className="space-y-1.5 text-sm font-medium text-text-main">
+                                        <label className="flex items-center gap-2 mb-1">
+                                            <Clock size={16} className="text-primary" /> Total Hours Spent
+                                        </label>
+                                        <Input
+                                            name="total_hours"
+                                            type="number"
+                                            step="0.1"
+                                            min="0.1"
+                                            value={formData.total_hours || ''}
+                                            onChange={(e) => handleChange('total_hours', parseFloat(e.target.value))}
+                                            required
+                                            placeholder="e.g. 1.5"
+                                        />
+                                    </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="space-y-3 bg-primary/5 border border-primary/10 rounded-xl p-4">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                                            <Stethoscope size={16} className="text-primary" /> Services Provided
+                                            <span className="text-[10px] font-medium text-gray-500 normal-case">(each row saves as a separate entry)</span>
+                                        </label>
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            className="h-8 px-3 text-xs flex items-center gap-1.5 bg-white"
+                                            onClick={() => setSelectedServices(prev => [...prev, { code: '', hours: '' }])}
+                                        >
+                                            <Plus size={14} /> Add Service
+                                        </Button>
+                                    </div>
+
+                                    {selectedServices.map((row, idx) => {
+                                        const usedCodes = new Set(
+                                            selectedServices.map((s, i) => (i !== idx ? s.code : '')).filter(Boolean)
+                                        );
+                                        return (
+                                            <div key={idx} className="grid grid-cols-1 sm:grid-cols-[1fr_160px_auto] gap-3 items-end bg-white rounded-lg p-3 border border-gray-100">
+                                                <Select
+                                                    label={`Service #${idx + 1}`}
+                                                    name={`service_code_${idx}`}
+                                                    value={row.code}
+                                                    onChange={(e) => {
+                                                        const v = e.target.value;
+                                                        setSelectedServices(prev => prev.map((s, i) => i === idx ? { ...s, code: v } : s));
+                                                    }}
+                                                    required
+                                                    options={[
+                                                        { value: '', label: '-- Select Service --' },
+                                                        ...SERVICE_MASTER
+                                                            .filter(s => !usedCodes.has(s.code))
+                                                            .map(s => ({ value: s.code, label: `${s.code} - ${s.name}` }))
+                                                    ]}
+                                                />
+                                                <div className="space-y-1.5 text-sm font-medium text-text-main">
+                                                    <label className="flex items-center gap-1.5 mb-1 text-xs">
+                                                        <Clock size={14} className="text-primary" /> Hours
+                                                    </label>
+                                                    <Input
+                                                        name={`total_hours_${idx}`}
+                                                        type="number"
+                                                        step="0.1"
+                                                        min="0.1"
+                                                        value={row.hours}
+                                                        onChange={(e) => {
+                                                            const v = e.target.value;
+                                                            setSelectedServices(prev => prev.map((s, i) => i === idx ? { ...s, hours: v } : s));
+                                                        }}
+                                                        required
+                                                        placeholder="e.g. 1.5"
+                                                    />
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSelectedServices(prev => prev.length > 1 ? prev.filter((_, i) => i !== idx) : [{ code: '', hours: '' }]);
+                                                    }}
+                                                    className="h-10 w-10 flex items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors disabled:opacity-40"
+                                                    disabled={selectedServices.length === 1 && !row.code && !row.hours}
+                                                    aria-label="Remove service"
+                                                >
+                                                    <X size={16} />
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
 
                         {/* SECTION 2: ADMIN ONLY - MEDICAL & FINANCIAL (Visible only to Admin) */}
@@ -495,7 +599,13 @@ export function ServiceEntryPage() {
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-2">
-                                    <Save size={20} /> {id ? 'Update Service Entry' : 'Save Service Entry'}
+                                    <Save size={20} />
+                                    {id
+                                        ? 'Update Service Entry'
+                                        : (() => {
+                                            const count = selectedServices.filter(s => s.code).length;
+                                            return count > 1 ? `Save ${count} Service Entries` : 'Save Service Entry';
+                                        })()}
                                 </div>
                             )}
                         </Button>
