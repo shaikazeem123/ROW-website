@@ -61,7 +61,7 @@ export interface CoreServiceDetailsRef {
 }
 
 export const CoreServiceDetails = forwardRef<CoreServiceDetailsRef, Props>(
-    function CoreServiceDetails({ patientName, onServiceDataChange }, ref) {
+    function CoreServiceDetails({ onServiceDataChange }, ref) {
         const today = new Date().toISOString().split('T')[0];
 
         const [formData, setFormData] = useState<ServiceFormData>({
