@@ -87,6 +87,7 @@ export function LiveBusTrackingPage() {
                 averageDistance: 0,
                 totalBeneficiaries: 0,
                 totalFuelCost: 0,
+                totalFuelLiters: 0,
                 averageFuelEfficiency: 0,
                 locationsCovered: 0,
             });
@@ -95,6 +96,7 @@ export function LiveBusTrackingPage() {
 
         const totalDistance = Math.round(filtered.reduce((sum, trip) => sum + trip.finalDistance, 0));
         const totalFuelCost = Math.round(filtered.reduce((sum, trip) => sum + (trip.fuelCost || 0), 0));
+        const totalFuelLiters = Number(filtered.reduce((sum, trip) => sum + (trip.fuelLiters || 0), 0).toFixed(2));
         const totalBeneficiaries = filtered.reduce((sum, trip) => sum + (trip.beneficiariesServed || 0), 0);
 
         const tripsWithFuel = filtered.filter(t => t.fuelEfficiency);
@@ -112,6 +114,7 @@ export function LiveBusTrackingPage() {
             averageDistance: filtered.length > 0 ? Math.round(totalDistance / filtered.length) : 0,
             totalBeneficiaries,
             totalFuelCost,
+            totalFuelLiters,
             averageFuelEfficiency,
             locationsCovered: uniqueLocations.size,
         });
@@ -277,6 +280,7 @@ export function LiveBusTrackingPage() {
         averageDistance: 0,
         totalBeneficiaries: 0,
         totalFuelCost: 0,
+        totalFuelLiters: 0,
         averageFuelEfficiency: 0,
         locationsCovered: 0,
     };
@@ -411,9 +415,9 @@ export function LiveBusTrackingPage() {
                 <Card className="p-4 border-l-4 border-l-orange-500">
                     <div className="flex justify-between items-start">
                         <div>
-                            <p className="text-sm font-medium text-text-muted mb-1">Fuel Efficiency</p>
+                            <p className="text-sm font-medium text-text-muted mb-1">Fuel Consumed</p>
                             <h3 className="text-2xl font-bold text-text-main">
-                                {stats.averageFuelEfficiency > 0 ? stats.averageFuelEfficiency : '--'} <span className="text-sm">km/L</span>
+                                {stats.totalFuelLiters > 0 ? stats.totalFuelLiters : '--'} <span className="text-sm">L</span>
                             </h3>
                         </div>
                         <div className="p-2 rounded-lg bg-orange-50">
@@ -422,19 +426,20 @@ export function LiveBusTrackingPage() {
                     </div>
                     <p className="text-xs text-text-muted mt-2">
                         Cost: ₹{stats.totalFuelCost.toLocaleString()}
+                        {stats.averageFuelEfficiency > 0 && ` • Avg ${stats.averageFuelEfficiency} km/L`}
                     </p>
                 </Card>
 
                 <Card className="p-4 border-l-4 border-l-yellow-500">
                     <div className="flex justify-between items-start">
                         <div>
-                            <p className="text-sm font-medium text-text-muted mb-1">Generator Records</p>
+                            <p className="text-sm font-medium text-text-muted mb-1">Generator Running Record</p>
                             <h3 className="text-2xl font-bold text-text-main">
                                 {(() => {
                                     const filtered = getFilteredTrips();
-                                    const tripsWithGen = filtered.filter(t => t.generatorUnitsUsed && t.generatorUnitsUsed > 0);
-                                    return tripsWithGen.length;
-                                })()}
+                                    const total = filtered.reduce((sum, t) => sum + (t.generatorUnitsUsed || 0), 0);
+                                    return total > 0 ? total.toFixed(1) : '--';
+                                })()} <span className="text-sm">units</span>
                             </h3>
                         </div>
                         <div className="p-2 rounded-lg bg-yellow-50">
@@ -442,11 +447,11 @@ export function LiveBusTrackingPage() {
                         </div>
                     </div>
                     <p className="text-xs text-text-muted mt-2">
-                        Total: {(() => {
+                        {(() => {
                             const filtered = getFilteredTrips();
-                            const total = filtered.reduce((sum, t) => sum + (t.generatorUnitsUsed || 0), 0);
-                            return total > 0 ? `${total.toFixed(1)} units` : 'No data';
-                        })()} used
+                            const tripsWithGen = filtered.filter(t => t.generatorUnitsUsed && t.generatorUnitsUsed > 0).length;
+                            return `${tripsWithGen} trip${tripsWithGen === 1 ? '' : 's'} logged`;
+                        })()}
                     </p>
                 </Card>
             </div>

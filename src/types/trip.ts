@@ -69,6 +69,7 @@ export interface TripSummary {
     averageDistance: number;
     totalBeneficiaries: number;
     totalFuelCost: number;
+    totalFuelLiters: number;
     averageFuelEfficiency: number;
     locationsCovered: number;
 }

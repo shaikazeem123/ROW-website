@@ -134,18 +134,15 @@ CREATE POLICY "Authenticated users can delete beneficiaries." ON public.benefici
 -- 8. TOKEN SYSTEM TRIGGER
 -- Automatically assigns a serial token number per day for new beneficiaries
 CREATE OR REPLACE FUNCTION public.assign_token_no()
-RETURNS TRIGGER AS $$
-DECLARE
-    next_token INTEGER;
+RETURNS TRIGGER AS $assign_token$
 BEGIN
-    SELECT COALESCE(MAX(token_no), 0) + 1
-    INTO next_token
-    FROM public.beneficiaries;
-    
-    NEW.token_no := next_token;
+    NEW.token_no := COALESCE(
+        (SELECT MAX(token_no) FROM public.beneficiaries),
+        0
+    ) + 1;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$assign_token$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS set_token_no ON public.beneficiaries;
 CREATE TRIGGER set_token_no

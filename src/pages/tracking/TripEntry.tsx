@@ -11,6 +11,8 @@ import { calculateDistance, calculateDuration, calculateFuelEfficiency } from '@
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 
+const BUS_MILEAGE_KMPL = 4.5;
+
 export function TripEntryPage() {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
@@ -197,6 +199,14 @@ export function TripEntryPage() {
             }
         }
     }, [formData.odometerStart, formData.odometerEnd]);
+
+    // Auto-calculate fuel consumed from distance using bus mileage
+    useEffect(() => {
+        if (calculatedData.distance > 0) {
+            const estimated = (calculatedData.distance / BUS_MILEAGE_KMPL).toFixed(2);
+            setFormData(prev => ({ ...prev, fuelLiters: estimated }));
+        }
+    }, [calculatedData.distance]);
 
     // Auto-calculate duration
     useEffect(() => {
@@ -527,15 +537,20 @@ export function TripEntryPage() {
                             Fuel & Cost
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <Input
-                                label="Fuel Added (Liters)"
-                                name="fuelLiters"
-                                type="number"
-                                step="0.1"
-                                value={formData.fuelLiters}
-                                onChange={handleChange}
-                                placeholder="0.0"
-                            />
+                            <div>
+                                <Input
+                                    label="Fuel Consumed (Liters)"
+                                    name="fuelLiters"
+                                    type="number"
+                                    step="0.1"
+                                    value={formData.fuelLiters}
+                                    onChange={handleChange}
+                                    placeholder="0.0"
+                                />
+                                <p className="text-[11px] text-gray-500 mt-1">
+                                    Auto-estimated at {BUS_MILEAGE_KMPL} km/L — edit if actual differs.
+                                </p>
+                            </div>
                             <Input
                                 label="Fuel Cost (₹)"
                                 name="fuelCost"
