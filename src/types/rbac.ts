@@ -1,69 +1,95 @@
 export type UserRole = 'Admin' | 'Manager' | 'Staff' | 'MIS' | 'Fleet';
 
 export interface PermissionRules {
+    // CRUD — apply per resource (any page the role can access)
+    canCreateRecords: boolean;
+    canEditRecords: boolean;
+    canDeleteRecords: boolean;
+
+    // System / admin
     canManageUsers: boolean;
     canViewAdminPage: boolean;
-    canEditSettings: boolean; // System settings
+    canEditSettings: boolean;
     canExportData: boolean;
-    canDeleteRecords: boolean;
     canApproveRequests: boolean;
     canImportFileNumbers: boolean;
+
+    // Page-level access — keys match the tags used by SidebarMenu and RouteGuard
+    // dashboard, beneficiary, services, assessments, tokens, tracking,
+    // reports, exercises, settings, admin
     accessiblePages: string[];
 }
 
 export const ROLE_PERMISSIONS: Record<UserRole, PermissionRules> = {
     Admin: {
+        canCreateRecords: true,
+        canEditRecords: true,
+        canDeleteRecords: true,
         canManageUsers: true,
         canViewAdminPage: true,
         canEditSettings: true,
         canExportData: true,
-        canDeleteRecords: true,
         canApproveRequests: true,
         canImportFileNumbers: true,
-        accessiblePages: ['dashboard', 'beneficiary', 'services', 'reports', 'settings', 'admin', 'token-management', 'assessments']
+        accessiblePages: [
+            'dashboard', 'beneficiary', 'services', 'assessments',
+            'tokens', 'tracking', 'reports', 'exercises', 'settings', 'admin'
+        ]
     },
     Manager: {
+        canCreateRecords: true,
+        canEditRecords: true,
+        canDeleteRecords: true,
         canManageUsers: false,
         canViewAdminPage: false,
-        canEditSettings: false,
+        canEditSettings: true,
         canExportData: true,
-        canDeleteRecords: false, // Managers typically can't delete hard records in this specific requirement
         canApproveRequests: true,
         canImportFileNumbers: true,
-        accessiblePages: ['dashboard', 'beneficiary', 'services', 'reports', 'settings', 'token-management', 'assessments']
+        accessiblePages: [
+            'dashboard', 'beneficiary', 'services', 'assessments',
+            'tokens', 'tracking', 'reports', 'exercises', 'settings'
+        ]
     },
     Staff: {
+        canCreateRecords: true,
+        canEditRecords: false,
+        canDeleteRecords: false,
         canManageUsers: false,
         canViewAdminPage: false,
         canEditSettings: false,
         canExportData: false,
-        canDeleteRecords: false,
         canApproveRequests: false,
         canImportFileNumbers: false,
-        // Staff has limited dashboard access in prompt requirements? 
-        // "Staff Access only to: Beneficiary pages, Service pages"
-        // I will follow that strict rule.
-        accessiblePages: ['beneficiary', 'services', 'settings', 'token-management', 'assessments'] // Settings for their own profile
+        accessiblePages: [
+            'dashboard', 'beneficiary', 'services', 'assessments', 'tokens', 'settings'
+        ]
     },
     MIS: {
+        canCreateRecords: true,
+        canEditRecords: true,
+        canDeleteRecords: false,
         canManageUsers: false,
         canViewAdminPage: false,
         canEditSettings: false,
         canExportData: true,
-        canDeleteRecords: false,
         canApproveRequests: false,
         canImportFileNumbers: true,
-        accessiblePages: ['beneficiary', 'services', 'assessments']
+        accessiblePages: [
+            'dashboard', 'beneficiary', 'services', 'assessments', 'reports', 'settings'
+        ]
     },
     Fleet: {
+        canCreateRecords: true,
+        canEditRecords: false,
+        canDeleteRecords: false,
         canManageUsers: false,
         canViewAdminPage: false,
         canEditSettings: false,
-        canExportData: false,
-        canDeleteRecords: false,
+        canExportData: true,
         canApproveRequests: false,
         canImportFileNumbers: false,
-        accessiblePages: ['tracking']
+        accessiblePages: ['dashboard', 'tracking', 'settings']
     }
 };
 

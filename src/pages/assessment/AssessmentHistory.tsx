@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 import { assessmentService } from '@/services/assessmentService';
 
 interface AssessmentRecord {
@@ -49,7 +50,7 @@ export function AssessmentHistoryPage() {
     const [toDate, setToDate] = useState('');
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const navigate = useNavigate();
-    const { canDeleteRecords } = usePermissions();
+    const { canDeleteRecords, canExportData } = usePermissions();
 
     const fetchHistory = useCallback(async () => {
         setIsLoading(true);
@@ -111,6 +112,12 @@ export function AssessmentHistoryPage() {
     useEffect(() => {
         fetchHistory();
     }, [fetchHistory]);
+
+    // Live cross-device sync across all three assessment tables.
+    useRealtimeSync({
+        tables: ['initial_assessment', 'clinical_assessment', 'follow_up_assessment'],
+        onChange: fetchHistory,
+    });
 
     const filtered = records.filter(r => {
         const matchesSearch =
@@ -211,9 +218,11 @@ export function AssessmentHistoryPage() {
                     <Button variant="secondary" onClick={fetchHistory} className="bg-white">
                         <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
                     </Button>
-                    <Button onClick={handleExport} className="flex items-center gap-2 shadow-lg shadow-primary/20">
-                        <Download size={18} /> <span className="hidden sm:inline">Export Excel</span>
-                    </Button>
+                    {canExportData && (
+                        <Button onClick={handleExport} className="flex items-center gap-2 shadow-lg shadow-primary/20">
+                            <Download size={18} /> <span className="hidden sm:inline">Export Excel</span>
+                        </Button>
+                    )}
                 </div>
             </div>
 

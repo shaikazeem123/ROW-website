@@ -4,11 +4,13 @@ import { History, MapPin, Calendar, Plus, Download, Edit2, Trash2, Loader2 } fro
 import { exportTripsToCSV } from '@/utils/exportUtils';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
+import { usePermissions } from '@/hooks/usePermissions';
 import type { Trip } from '@/types/trip';
 
 import { supabase } from '@/lib/supabase';
 
 export function TripHistoryPage() {
+    const { canCreateRecords, canEditRecords, canDeleteRecords, canExportData } = usePermissions();
     const [trips, setTrips] = useState<Trip[]>([]);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [filter, setFilter] = useState({
@@ -108,21 +110,25 @@ export function TripHistoryPage() {
                     <p className="text-text-muted">View and manage all bus trips</p>
                 </div>
                 <div className="flex gap-3">
-                    <Button
-                        variant="outline"
-                        className="flex items-center gap-2 min-h-[44px]"
-                        onClick={() => exportTripsToCSV(filteredTrips)}
-                        disabled={filteredTrips.length === 0}
-                    >
-                        <Download size={18} />
-                        <span className="hidden sm:inline">Export</span>
-                    </Button>
-                    <Link to="/tracking/add-trip">
-                        <Button className="flex items-center gap-2 min-h-[44px]">
-                            <Plus size={18} />
-                            Add Trip
+                    {canExportData && (
+                        <Button
+                            variant="outline"
+                            className="flex items-center gap-2 min-h-[44px]"
+                            onClick={() => exportTripsToCSV(filteredTrips)}
+                            disabled={filteredTrips.length === 0}
+                        >
+                            <Download size={18} />
+                            <span className="hidden sm:inline">Export</span>
                         </Button>
-                    </Link>
+                    )}
+                    {canCreateRecords && (
+                        <Link to="/tracking/add-trip">
+                            <Button className="flex items-center gap-2 min-h-[44px]">
+                                <Plus size={18} />
+                                Add Trip
+                            </Button>
+                        </Link>
+                    )}
                 </div>
             </div>
 
@@ -224,21 +230,25 @@ export function TripHistoryPage() {
                                         </td>
                                         <td className="p-3 text-sm text-right">
                                             <div className="flex items-center justify-end gap-1.5">
-                                                <Link to={`/tracking/edit-trip/${trip.id}`}>
-                                                    <Button variant="outline" className="p-2 h-auto text-primary hover:bg-primary/5">
-                                                        <Edit2 size={14} />
+                                                {canEditRecords && (
+                                                    <Link to={`/tracking/edit-trip/${trip.id}`}>
+                                                        <Button variant="outline" className="p-2 h-auto text-primary hover:bg-primary/5">
+                                                            <Edit2 size={14} />
+                                                        </Button>
+                                                    </Link>
+                                                )}
+                                                {canDeleteRecords && (
+                                                    <Button
+                                                        variant="outline"
+                                                        className="p-2 h-auto text-red-500 hover:bg-red-50 border-red-200"
+                                                        onClick={() => handleDelete(trip)}
+                                                        disabled={deletingId === trip.id}
+                                                    >
+                                                        {deletingId === trip.id
+                                                            ? <Loader2 size={14} className="animate-spin" />
+                                                            : <Trash2 size={14} />}
                                                     </Button>
-                                                </Link>
-                                                <Button
-                                                    variant="outline"
-                                                    className="p-2 h-auto text-red-500 hover:bg-red-50 border-red-200"
-                                                    onClick={() => handleDelete(trip)}
-                                                    disabled={deletingId === trip.id}
-                                                >
-                                                    {deletingId === trip.id
-                                                        ? <Loader2 size={14} className="animate-spin" />
-                                                        : <Trash2 size={14} />}
-                                                </Button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>

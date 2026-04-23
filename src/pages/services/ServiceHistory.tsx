@@ -19,6 +19,7 @@ import {
     Loader2,
 } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 import ExcelJS from 'exceljs';
 import type { ServiceEntry } from '@/types/serviceEntry';
 
@@ -36,8 +37,8 @@ export function ServiceHistoryPage() {
     const [toDate, setToDate] = useState('');
 
     const navigate = useNavigate();
-    const { role } = usePermissions();
-    const isAdmin = role === 'Admin';
+    const { canEditRecords, canDeleteRecords, canExportData } = usePermissions();
+    const showActions = canEditRecords || canDeleteRecords;
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
     const fetchHistory = useCallback(async () => {
@@ -89,6 +90,13 @@ export function ServiceHistoryPage() {
     useEffect(() => {
         fetchHistory();
     }, [fetchHistory]);
+
+    // Live cross-device sync: refetch when any device writes a service entry
+    // or beneficiary (names are joined from the beneficiaries table).
+    useRealtimeSync({
+        tables: ['service_entries', 'beneficiaries'],
+        onChange: fetchHistory,
+    });
 
     const filteredServices = services.filter(s => {
         const matchesSearch =
@@ -190,9 +198,11 @@ export function ServiceHistoryPage() {
                     <Button variant="secondary" onClick={fetchHistory} className="bg-white">
                         <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
                     </Button>
-                    <Button onClick={handleExport} className="flex items-center gap-2 shadow-lg shadow-primary/20">
-                        <Download size={18} /> <span className="hidden sm:inline">Export Audit Excel</span>
-                    </Button>
+                    {canExportData && (
+                        <Button onClick={handleExport} className="flex items-center gap-2 shadow-lg shadow-primary/20">
+                            <Download size={18} /> <span className="hidden sm:inline">Export Audit Excel</span>
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -307,7 +317,7 @@ export function ServiceHistoryPage() {
                                     <th className="py-4 font-bold text-[10px] uppercase text-gray-400 tracking-wider">Service & Hours</th>
                                     <th className="py-4 font-bold text-[10px] uppercase text-gray-400 tracking-wider">Location & Mode</th>
                                     <th className="py-4 font-bold text-[10px] uppercase text-gray-400 tracking-wider">Source</th>
-                                    {isAdmin && <th className="py-4 font-bold text-[10px] uppercase text-gray-400 tracking-wider pr-4 text-right">Actions</th>}
+                                    {showActions && <th className="py-4 font-bold text-[10px] uppercase text-gray-400 tracking-wider pr-4 text-right">Actions</th>}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
@@ -370,27 +380,31 @@ export function ServiceHistoryPage() {
                                                 </span>
                                             )}
                                         </td>
-                                        {isAdmin && (
+                                        {showActions && (
                                             <td className="py-5 pr-4 text-right">
                                                 <div className="flex items-center justify-end gap-2 whitespace-nowrap">
-                                                    <Button
-                                                        variant="secondary"
-                                                        className="h-8 px-2 flex items-center gap-1.5 text-[11px] bg-blue-50 text-blue-600 border-none hover:bg-blue-100"
-                                                        onClick={() => navigate(`/services/edit/${service.id}`)}
-                                                    >
-                                                        <Edit size={14} /> Edit
-                                                    </Button>
-                                                    <Button
-                                                        variant="secondary"
-                                                        className="h-8 px-2 flex items-center gap-1.5 text-[11px] bg-red-50 text-red-600 border-none hover:bg-red-100"
-                                                        onClick={() => handleDelete(service)}
-                                                        disabled={deletingId === service.id}
-                                                    >
-                                                        {deletingId === service.id
-                                                            ? <Loader2 size={14} className="animate-spin" />
-                                                            : <Trash2 size={14} />}
-                                                        Delete
-                                                    </Button>
+                                                    {canEditRecords && (
+                                                        <Button
+                                                            variant="secondary"
+                                                            className="h-8 px-2 flex items-center gap-1.5 text-[11px] bg-blue-50 text-blue-600 border-none hover:bg-blue-100"
+                                                            onClick={() => navigate(`/services/edit/${service.id}`)}
+                                                        >
+                                                            <Edit size={14} /> Edit
+                                                        </Button>
+                                                    )}
+                                                    {canDeleteRecords && (
+                                                        <Button
+                                                            variant="secondary"
+                                                            className="h-8 px-2 flex items-center gap-1.5 text-[11px] bg-red-50 text-red-600 border-none hover:bg-red-100"
+                                                            onClick={() => handleDelete(service)}
+                                                            disabled={deletingId === service.id}
+                                                        >
+                                                            {deletingId === service.id
+                                                                ? <Loader2 size={14} className="animate-spin" />
+                                                                : <Trash2 size={14} />}
+                                                            Delete
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </td>
                                         )}

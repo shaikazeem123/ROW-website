@@ -8,6 +8,7 @@ import { exportBeneficiariesToExcel } from '@/utils/beneficiaryExport';
 import { db } from '@/lib/db';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 import { ImportFileNumbersModal } from '@/components/beneficiary/ImportFileNumbersModal';
 import { FileUp } from 'lucide-react';
 import type { OfflineBeneficiary } from '@/lib/db';
@@ -28,7 +29,7 @@ export function BeneficiaryListPage() {
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-    const { canDeleteRecords, canImportFileNumbers } = usePermissions();
+    const { canDeleteRecords, canImportFileNumbers, canCreateRecords, canExportData } = usePermissions();
 
     const fetchBeneficiaries = useCallback(async () => {
         setIsLoading(true);
@@ -64,6 +65,14 @@ export function BeneficiaryListPage() {
     useEffect(() => {
         fetchBeneficiaries();
     }, [isOnline, fetchBeneficiaries]); // Refetch when coming back online
+
+    // Live cross-device sync: refetch whenever another device writes to beneficiaries,
+    // and whenever this tab regains focus.
+    useRealtimeSync({
+        tables: 'beneficiaries',
+        onChange: fetchBeneficiaries,
+        enabled: isOnline,
+    });
 
     const handleDelete = async (id: string, name: string) => {
         if (!window.confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) return;
@@ -195,14 +204,16 @@ export function BeneficiaryListPage() {
                             <Trash2 size={18} /> Delete Selected ({selectedIds.length})
                         </Button>
                     )}
-                    <Button
-                        variant="outline"
-                        onClick={handleExport}
-                        className="flex items-center gap-2"
-                        disabled={isLoading || filteredBeneficiaries.length === 0}
-                    >
-                        <Download size={18} /> Export Excel ({filteredBeneficiaries.length})
-                    </Button>
+                    {canExportData && (
+                        <Button
+                            variant="outline"
+                            onClick={handleExport}
+                            className="flex items-center gap-2"
+                            disabled={isLoading || filteredBeneficiaries.length === 0}
+                        >
+                            <Download size={18} /> Export Excel ({filteredBeneficiaries.length})
+                        </Button>
+                    )}
                     {canImportFileNumbers && (
                         <Button
                             variant="secondary"
@@ -212,11 +223,13 @@ export function BeneficiaryListPage() {
                             <FileUp size={18} /> Import File Numbers
                         </Button>
                     )}
-                    <Link to="/beneficiary/add">
-                        <Button className="flex items-center gap-2">
-                            <Plus size={18} /> Add Beneficiary
-                        </Button>
-                    </Link>
+                    {canCreateRecords && (
+                        <Link to="/beneficiary/add">
+                            <Button className="flex items-center gap-2">
+                                <Plus size={18} /> Add Beneficiary
+                            </Button>
+                        </Link>
+                    )}
                 </div>
             </div>
 

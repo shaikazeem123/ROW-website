@@ -59,15 +59,14 @@ export function SidebarMenu({ collapsed, mobileOpen, onMobileClose }: SidebarMen
     const { hasPageAccess } = usePermissions();
 
     const hasAccess = (path: string) => {
-        if (path === '/dashboard') return hasPageAccess('dashboard');
-        if (path === '/calendar') return hasPageAccess('dashboard');
-        if (path.startsWith('/tracking')) return hasPageAccess('tracking') || hasPageAccess('dashboard');
+        if (path === '/dashboard' || path === '/calendar') return hasPageAccess('dashboard');
+        if (path.startsWith('/tracking')) return hasPageAccess('tracking');
         if (path.startsWith('/beneficiary')) return hasPageAccess('beneficiary');
         if (path.startsWith('/services')) return hasPageAccess('services');
         if (path.startsWith('/assessments')) return hasPageAccess('assessments');
-        if (path.startsWith('/exercises')) return hasPageAccess('assessments');
+        if (path.startsWith('/exercises')) return hasPageAccess('exercises');
         if (path === '/reports') return hasPageAccess('reports');
-        if (path === '/token-management') return hasPageAccess('token-management');
+        if (path === '/token-management') return hasPageAccess('tokens');
         if (path === '/sync' || path === '/admin/control') return hasPageAccess('admin');
         if (path === '/settings') return hasPageAccess('settings');
         return true;

@@ -77,6 +77,7 @@ export function LoginPage() {
             email: formData.email,
             password: formData.password,
             options: {
+              emailRedirectTo: `${window.location.origin}/auth/callback`,
               data: {
                 full_name: formData.username,
                 phone: formData.phone,

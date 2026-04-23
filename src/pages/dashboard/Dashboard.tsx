@@ -13,6 +13,7 @@ import { Button } from '@/components/common/Button';
 import { Link } from 'react-router-dom';
 import { BeneficiaryRegistrationChart } from '@/components/dashboard/BeneficiaryRegistrationChart';
 import { ServiceDashboardChart } from '@/components/dashboard/ServiceDashboardChart';
+import { AssessmentVsReassessmentChart } from '@/components/dashboard/AssessmentVsReassessmentChart';
 import type { TimeFrame, ChartFilter } from '@/types/dashboard';
 
 
@@ -336,6 +337,7 @@ export function DashboardPage() {
                 <div className="lg:col-span-2 space-y-4 md:space-y-6">
                     <BeneficiaryRegistrationChart timeframe={timeframe} filter={globalFilter} />
                     <ServiceDashboardChart timeframe={timeframe} filter={globalFilter} />
+                    <AssessmentVsReassessmentChart filter={globalFilter} />
                 </div>
 
                 {/* Side Panel: Scheduled Camps */}

@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import { AppLayout } from '../components/layout/AppLayout';
 import { LoginPage } from '../pages/auth/Login';
 import { UpdatePasswordPage } from '../pages/auth/UpdatePassword';
+import { AuthCallbackPage } from '../pages/auth/AuthCallback';
 import { DashboardPage } from '../pages/dashboard/Dashboard';
 import { CalendarPage } from '../pages/calendar/Calendar';
 import { LiveBusTrackingPage } from '../pages/tracking/LiveBusTracking';
@@ -24,6 +25,7 @@ import { AssessmentViewPage } from '../pages/assessment/AssessmentView';
 import { ExerciseManagementPage } from '../pages/exercises/ExerciseManagement';
 import { NotFoundPage } from '../pages/NotFound';
 import { ProtectedRoute } from './ProtectedRoute';
+import { RouteGuard } from './RouteGuard';
 import { DefaultRedirect } from './DefaultRedirect';
 
 export const router = createBrowserRouter([
@@ -36,6 +38,10 @@ export const router = createBrowserRouter([
         element: <UpdatePasswordPage />,
     },
     {
+        path: '/auth/callback',
+        element: <AuthCallbackPage />,
+    },
+    {
         path: '/',
         element: <ProtectedRoute />,
         errorElement: <NotFoundPage />,
@@ -43,101 +49,125 @@ export const router = createBrowserRouter([
             {
                 element: <AppLayout />,
                 children: [
+                    { index: true, element: <DefaultRedirect /> },
+
                     {
-                        index: true,
-                        element: <DefaultRedirect />,
+                        element: <RouteGuard page="dashboard" />,
+                        children: [
+                            { path: 'dashboard', element: <DashboardPage /> },
+                            { path: 'calendar', element: <CalendarPage /> },
+                        ],
+                    },
+
+                    {
+                        element: <RouteGuard page="tracking" />,
+                        children: [
+                            { path: 'tracking', element: <LiveBusTrackingPage /> },
+                            { path: 'tracking/history', element: <TripHistoryPage /> },
+                        ],
                     },
                     {
-                        path: 'dashboard',
-                        element: <DashboardPage />,
+                        element: <RouteGuard page="tracking" requires="create" />,
+                        children: [
+                            { path: 'tracking/add-trip', element: <TripEntryPage /> },
+                        ],
                     },
                     {
-                        path: 'calendar',
-                        element: <CalendarPage />,
+                        element: <RouteGuard page="tracking" requires="edit" />,
+                        children: [
+                            { path: 'tracking/edit-trip/:id', element: <TripEntryPage /> },
+                        ],
+                    },
+
+                    {
+                        element: <RouteGuard page="beneficiary" />,
+                        children: [
+                            { path: 'beneficiary/list', element: <BeneficiaryListPage /> },
+                            { path: 'beneficiary/:id', element: <BeneficiaryProfilePage /> },
+                        ],
                     },
                     {
-                        path: 'tracking',
-                        element: <LiveBusTrackingPage />,
+                        element: <RouteGuard page="beneficiary" requires="create" />,
+                        children: [
+                            { path: 'beneficiary/add', element: <AddBeneficiaryPage /> },
+                        ],
                     },
                     {
-                        path: 'tracking/add-trip',
-                        element: <TripEntryPage />,
+                        element: <RouteGuard page="beneficiary" requires="edit" />,
+                        children: [
+                            { path: 'beneficiary/edit/:id', element: <EditBeneficiaryPage /> },
+                        ],
+                    },
+
+                    {
+                        element: <RouteGuard page="services" />,
+                        children: [
+                            { path: 'services/history', element: <ServiceHistoryPage /> },
+                        ],
                     },
                     {
-                        path: 'tracking/history',
-                        element: <TripHistoryPage />,
+                        element: <RouteGuard page="services" requires="create" />,
+                        children: [
+                            { path: 'services/new', element: <ServiceEntryPage /> },
+                        ],
                     },
                     {
-                        path: 'tracking/edit-trip/:id',
-                        element: <TripEntryPage />,
+                        element: <RouteGuard page="services" requires="edit" />,
+                        children: [
+                            { path: 'services/edit/:id', element: <ServiceEntryPage /> },
+                        ],
+                    },
+
+                    {
+                        element: <RouteGuard page="assessments" />,
+                        children: [
+                            { path: 'assessments/history', element: <AssessmentHistoryPage /> },
+                            { path: 'assessments/view/:patientId', element: <AssessmentViewPage /> },
+                        ],
                     },
                     {
-                        path: 'beneficiary/add',
-                        element: <AddBeneficiaryPage />,
+                        element: <RouteGuard page="assessments" requires="create" />,
+                        children: [
+                            { path: 'assessments/new', element: <AssessmentEntryPage /> },
+                        ],
                     },
                     {
-                        path: 'beneficiary/list',
-                        element: <BeneficiaryListPage />,
+                        element: <RouteGuard page="assessments" requires="edit" />,
+                        children: [
+                            { path: 'assessments/edit/:patientId', element: <AssessmentEntryPage /> },
+                        ],
+                    },
+
+                    {
+                        element: <RouteGuard page="exercises" />,
+                        children: [
+                            { path: 'exercises/manage', element: <ExerciseManagementPage /> },
+                        ],
                     },
                     {
-                        path: 'beneficiary/:id',
-                        element: <BeneficiaryProfilePage />,
+                        element: <RouteGuard page="reports" />,
+                        children: [
+                            { path: 'reports', element: <ReportsPage /> },
+                        ],
                     },
                     {
-                        path: 'beneficiary/edit/:id',
-                        element: <EditBeneficiaryPage />,
+                        element: <RouteGuard page="settings" />,
+                        children: [
+                            { path: 'settings', element: <SettingsPage /> },
+                        ],
                     },
                     {
-                        path: 'services/new',
-                        element: <ServiceEntryPage />,
+                        element: <RouteGuard page="admin" />,
+                        children: [
+                            { path: 'admin/control', element: <AdminControlPage /> },
+                            { path: 'sync', element: <SyncDashboardPage /> },
+                        ],
                     },
                     {
-                        path: 'services/edit/:id',
-                        element: <ServiceEntryPage />,
-                    },
-                    {
-                        path: 'services/history',
-                        element: <ServiceHistoryPage />,
-                    },
-                    {
-                        path: 'assessments/new',
-                        element: <AssessmentEntryPage />,
-                    },
-                    {
-                        path: 'assessments/history',
-                        element: <AssessmentHistoryPage />,
-                    },
-                    {
-                        path: 'assessments/view/:patientId',
-                        element: <AssessmentViewPage />,
-                    },
-                    {
-                        path: 'assessments/edit/:patientId',
-                        element: <AssessmentEntryPage />,
-                    },
-                    {
-                        path: 'exercises/manage',
-                        element: <ExerciseManagementPage />,
-                    },
-                    {
-                        path: 'reports',
-                        element: <ReportsPage />,
-                    },
-                    {
-                        path: 'settings',
-                        element: <SettingsPage />,
-                    },
-                    {
-                        path: 'admin/control',
-                        element: <AdminControlPage />,
-                    },
-                    {
-                        path: 'token-management',
-                        element: <TokenManagementPage />,
-                    },
-                    {
-                        path: 'sync',
-                        element: <SyncDashboardPage />,
+                        element: <RouteGuard page="tokens" />,
+                        children: [
+                            { path: 'token-management', element: <TokenManagementPage /> },
+                        ],
                     },
                 ]
             }
