@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
+
 import { Link } from 'react-router-dom';
 import { BeneficiaryRegistrationChart } from '@/components/dashboard/BeneficiaryRegistrationChart';
 import { ServiceDashboardChart } from '@/components/dashboard/ServiceDashboardChart';
@@ -292,11 +293,7 @@ export function DashboardPage() {
                     <h1 className="text-xl md:text-2xl font-bold text-text-main">Dashboard Overview</h1>
                     <p className="text-text-muted">Welcome back, Admin. Here's what's happening today.</p>
                 </div>
-                <div className="flex gap-3">
-                    <Button className="flex items-center gap-2">
-                        Download Report
-                    </Button>
-                </div>
+
             </div>
 
             {/* Stats Grid */}
