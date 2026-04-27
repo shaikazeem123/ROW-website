@@ -3,6 +3,7 @@ import { RouterProvider } from 'react-router-dom';
 import { router } from './routes/AppRoutes';
 import { AuthProvider } from './context/AuthContext';
 import { SyncService } from './lib/syncService';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 function App() {
   useEffect(() => {
@@ -13,6 +14,7 @@ function App() {
   return (
     <AuthProvider>
       <RouterProvider router={router} />
+      <SpeedInsights />
     </AuthProvider>
   );
 }
