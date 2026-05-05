@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+/* Tailwind v4 Theme Configuration */
+@theme {
+  /* Primary Colors - Healthcare Teal */
+  --color-primary: #00897B;
+  --color-primary-light: #4DB6AC;
+  --color-primary-dark: #00695C;
+
+  /* Accent & Secondary */
+  --color-secondary: #F8F9FA;
+  --color-accent: #FF7043;
+
+  /* Surface & Background */
+  --color-surface: #FFFFFF;
+  --color-background: #F4F6F8;
+
+  /* Text Colors */
+  --color-text-main: #2C3E50;
+  --color-text-muted: #6C757D;
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+@layer base {
+  html, body {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: manipulation;
+  }
+  body {
+    @apply bg-background text-text-main antialiased font-sans;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply text-primary font-semibold;
+  }
+}
